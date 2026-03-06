@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contact Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin:0; background:#f5f5f7; color:#111827; }
+    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+    header .left { display:flex; align-items:center; gap:12px; }
+    header a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 8px; border-radius:4px; border:1px solid #4b5563; }
+    header a:hover { background:#374151; }
+    header h1 { margin:0; font-size:18px; font-weight:700; }
+    main { max-width:1100px; margin:20px auto 40px; padding:0 16px; display:grid; grid-template-columns:1.1fr 1fr; gap:20px; }
+    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+    h2 { margin:0 0 8px; font-size:17px; }
+    p.subtle { margin:0 0 12px; font-size:13px; color:#6b7280; }
+    .small { font-size:11px; color:#6b7280; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
+    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
+    th { font-size:12px; color:#6b7280; }
+    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; }
+    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:10px; }
+    .photo-card { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+    .photo-card img { width:100%; height:90px; object-fit:cover; display:block; }
+    .photo-meta { padding:4px 6px 6px; font-size:11px; }
+    .photo-meta-top { display:flex; justify-content:space-between; gap:4px; }
+    .reuse { margin-top:4px; padding:2px 6px; border-radius:999px; border:1px solid #f59e0b; background:#fffbeb; color:#92400e; display:inline-block; }
+    .link { color:#2563eb; text-decoration:none; font-size:11px; }
+    .link:hover { text-decoration:underline; }
+    @media (max-width: 900px){
+      main { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <a href="contacts.html">&larr; Contacts</a>
+      <div>
+        <div class="small">Contact</div>
+        <h1 id="contactName">Loading…</h1>
+        <div class="small" id="contactPhone"></div>
+      </div>
+    </div>
+    <div class="right">
+      <a href="dashboard.html">Campaigns</a>
+      <a href="photos.html">Photos</a>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h2>Campaign memberships</h2>
+      <p class="subtle">
+        Campaigns this contact is part of, including send dates and how many photos they’ve sent in each.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Campaign</th>
+            <th>Added</th>
+            <th>First sent</th>
+            <th>Last send</th>
+            <th>Photos</th>
+          </tr>
+        </thead>
+        <tbody id="campaignsTbody">
+          <tr><td colspan="5" class="small">Loading…</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Photos from this contact</h2>
+      <p class="subtle">
+        All photos this contact has sent, across all campaigns.
+      </p>
+      <div id="photosContainer" class="small">Loading…</div>
+    </section>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const contactId = params.get("id");
+
+    const els = {
+      contactName: document.getElementById("contactName"),
+      contactPhone: document.getElementById("contactPhone"),
+      campaignsTbody: document.getElementById("campaignsTbody"),
+      photosContainer: document.getElementById("photosContainer")
+    };
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function fmt(ts) {
+      if (!ts) return "–";
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
+    }
+
+    async function loadDetails() {
+      if (!contactId) {
+        els.contactName.textContent = "No contact id";
+        els.campaignsTbody.innerHTML = `<tr><td colspan="5" class="small">Missing contact id in URL (?id=...)</td></tr>`;
+        els.photosContainer.textContent = "";
+        return;
+      }
+
+      try {
+        const data = await fetchJSON(`/api/contact-details/${encodeURIComponent(contactId)}`);
+        const { contact, campaigns, photos } = data;
+
+        els.contactName.textContent = contact.name || "(unnamed)";
+        els.contactPhone.textContent = contact.phoneNumber;
+
+        // Campaign memberships
+        els.campaignsTbody.innerHTML = "";
+        if (!campaigns.length) {
+          els.campaignsTbody.innerHTML = `<tr><td colspan="5" class="small">Not in any campaigns yet.</td></tr>`;
+        } else {
+          const sortedCamps = campaigns.slice().sort(
+            (a, b) => new Date(b.addedAt) - new Date(a.addedAt)
+          );
+          for (const c of sortedCamps) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>
+                <a class="link" href="campaign.html?id=${encodeURIComponent(c.campaignId)}">
+                  ${c.campaignName}
+                </a>
+              </td>
+              <td class="small">${fmt(c.addedAt)}</td>
+              <td class="small">${fmt(c.firstSentAt)}</td>
+              <td class="small">${fmt(c.lastOutboundAt)}</td>
+              <td class="small">${c.photoCount}</td>
+            `;
+            els.campaignsTbody.appendChild(tr);
+          }
+        }
+
+        // Photos
+        if (!photos.length) {
+          els.photosContainer.textContent = "No photos from this contact yet.";
+        } else {
+          els.photosContainer.innerHTML = "";
+          const grid = document.createElement("div");
+          grid.className = "photo-grid";
+
+          for (const p of photos) {
+            const card = document.createElement("div");
+            card.className = "photo-card";
+
+            const img = document.createElement("img");
+            img.src = p.url;
+            img.alt = p.filename;
+            card.appendChild(img);
+
+            const meta = document.createElement("div");
+            meta.className = "photo-meta";
+
+            const top = document.createElement("div");
+            top.className = "photo-meta-top";
+            top.innerHTML = `
+              <div>${p.filename}</div>
+              <div class="small">${fmt(p.createdAt)}</div>
+            `;
+            meta.appendChild(top);
+
+            const line2 = document.createElement("div");
+            line2.className = "small";
+            if (p.campaignId && p.campaignName) {
+              line2.innerHTML = `
+                From campaign:
+                <a class="link" href="campaign.html?id=${encodeURIComponent(p.campaignId)}">
+                  ${p.campaignName}
+                </a>
+              `;
+            } else if (p.campaignId) {
+              line2.innerHTML = `
+                From campaign:
+                <a class="link" href="campaign.html?id=${encodeURIComponent(p.campaignId)}">
+                  (no name)
+                </a>
+              `;
+            } else {
+              line2.textContent = "Not assigned to a campaign";
+            }
+            meta.appendChild(line2);
+
+            if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
+              const reuse = document.createElement("div");
+              reuse.className = "reuse";
+              reuse.textContent = `⚠ Also used in ${p.similarInOtherCampaigns.length} other campaign(s)`;
+              meta.appendChild(reuse);
+            }
+
+            card.appendChild(meta);
+            grid.appendChild(card);
+          }
+
+          els.photosContainer.appendChild(grid);
+        }
+
+      } catch (e) {
+        els.campaignsTbody.innerHTML = `<tr><td colspan="5" class="small">Error: ${e.message}</td></tr>`;
+        els.photosContainer.textContent = "Error loading photos.";
+      }
+    }
+
+    loadDetails();
+  </script>
+</body>
+</html>

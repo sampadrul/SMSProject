@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Campaign</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin:0; background:#f5f5f7; color:#111827; }
+    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+    header .left { display:flex; align-items:center; gap:12px; }
+    header a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 8px; border-radius:4px; border:1px solid #4b5563; }
+    header a:hover { background:#374151; }
+    header h1 { margin:0; font-size:18px; font-weight:700; }
+    header .right a { margin-left:8px; border-radius:999px; }
+    main { max-width:1100px; margin:20px auto; padding:0 16px 40px; display:grid; grid-template-columns:1.1fr 1fr; gap:20px; }
+    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+    h2 { margin:0 0 8px; font-size:17px; }
+    h3 { margin:10px 0 4px; font-size:15px; }
+    p.subtle { margin:0 0 12px; font-size:13px; color:#6b7280; }
+    label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
+    select, textarea { width:100%; box-sizing:border-box; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; font-family:inherit; }
+    textarea { min-height:70px; resize:vertical; }
+    input[type="text"] { width:100%; box-sizing:border-box; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; font-family:inherit; }
+    button { border-radius:999px; border:none; padding:7px 14px; font-size:14px; cursor:pointer; background:#111827; color:#fff; font-weight:700; }
+    button.secondary { background:#e5e7eb; color:#111827; font-weight:600; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
+    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
+    th { font-size:12px; color:#6b7280; }
+    .small { font-size:11px; color:#6b7280; }
+    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; }
+    .lock { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; }
+    .danger { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
+    .okBadge { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
+    .status { min-height:18px; margin-top:8px; font-size:13px; }
+    .ok { color:#16a34a; } .err { color:#dc2626; } .neutral { color:#6b7280; }
+    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:10px; }
+    .photo-card { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
+    .photo-card img { width:100%; height:90px; object-fit:cover; display:block; }
+    .photo-meta { padding:4px 6px 6px; font-size:11px; }
+    .small-text { font-size:11px; color:#6b7280; }
+    .step-label { font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; }
+    .step-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; }
+    @media (max-width: 900px){ main{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <a href="dashboard.html">&larr; Campaigns</a>
+      <div>
+        <div class="small">Campaign</div>
+        <h1 id="campaignName">Loading…</h1>
+        <div style="margin-top:4px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span id="lockBadge" class="lock"></span>
+          <span id="unsentBadge" class="badge"></span>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <a href="contacts.html">Contacts</a>
+      <a href="photos.html">Photos</a>
+      <span id="campaignMeta" class="small"></span>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <!-- Step 1: Message -->
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 1</div>
+          <h2>Message</h2>
+        </div>
+      </div>
+      <p class="subtle">
+        Set the message for this campaign. On the first send, this message will be locked and reused for
+        all future incremental sends to newly added contacts.
+      </p>
+
+      <label for="message">Message text</label>
+      <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
+      <div class="small" id="messageHint" style="margin-top:4px;"></div>
+
+      <hr style="margin:16px 0;">
+
+      <!-- Step 2: Assign contacts -->
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 2</div>
+          <h2>Assign contacts</h2>
+        </div>
+      </div>
+      <p class="subtle">
+        Add existing contacts into this campaign. You can continue adding contacts even after the first send.
+        Incremental sends will only target contacts who have not been sent yet.
+      </p>
+
+      <div style="margin-bottom:10px;">
+        <label for="globalSelect">Add existing contact</label>
+        <select id="globalSelect">
+          <option value="">Loading contacts…</option>
+        </select>
+        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+          <button id="addToCampaignBtn">Add to campaign</button>
+          <span class="small">Need someone new? Create them on <a href="contacts.html">Contacts</a>.</span>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>First sent</th>
+            <th>Last send</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="contactsTbody">
+          <tr><td colspan="5" class="small">No contacts yet.</td></tr>
+        </tbody>
+      </table>
+
+      <hr style="margin:16px 0;">
+
+      <!-- Step 3: Review & send -->
+      <div class="step-header">
+        <div>
+          <div class="step-label">Step 3</div>
+          <h2>Review & send</h2>
+        </div>
+      </div>
+      <p class="subtle" id="sendHelp"></p>
+
+      <div style="margin-bottom:8px;">
+        <div class="small">Summary</div>
+        <div class="small" id="reviewSummary"></div>
+      </div>
+
+      <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
+        <button id="sendBtn">Send</button>
+        <span id="sendModeTag" class="pill"></span>
+      </div>
+
+      <div id="sendStatus" class="status neutral"></div>
+
+      <hr style="margin:16px 0;">
+
+      <h3>Send log</h3>
+      <p class="subtle">Every send is recorded here (initial + incremental).</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Type</th>
+            <th>Targets</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody id="sendLogTbody">
+          <tr><td colspan="4" class="small">No sends yet.</td></tr>
+        </tbody>
+      </table>
+
+      <hr style="margin:16px 0;">
+
+      <!-- Dev: simulate inbound MMS -->
+      <h3>Dev: Simulate inbound MMS</h3>
+      <p class="subtle">
+        Use this to pretend Twilio sent us a photo for one of this campaign’s contacts. Great for testing
+        photo assignment and reuse logic without using curl.
+      </p>
+
+      <label for="devContact">Contact</label>
+      <select id="devContact">
+        <option value="">Loading contacts…</option>
+      </select>
+
+      <label for="devMediaUrl" style="margin-top:8px; display:block;">Image URL</label>
+      <input id="devMediaUrl" type="text" placeholder="https://images.pexels.com/..." />
+
+      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+        <button id="devSimulateBtn">Simulate inbound MMS</button>
+        <span class="small" id="devStatus"></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Photos by Sender</h2>
+      <p class="subtle">Photos received for contacts in this campaign.</p>
+      <div id="photosContainer" class="small">No photos yet.</div>
+    </section>
+  </main>
+
+  <script>
+    const campaignId = new URLSearchParams(window.location.search).get("id");
+    if (!campaignId) alert("No campaign id provided in URL (expected ?id=...)");
+
+    const els = {
+      campaignName: document.getElementById("campaignName"),
+      campaignMeta: document.getElementById("campaignMeta"),
+      lockBadge: document.getElementById("lockBadge"),
+      unsentBadge: document.getElementById("unsentBadge"),
+
+      message: document.getElementById("message"),
+      messageHint: document.getElementById("messageHint"),
+
+      globalSelect: document.getElementById("globalSelect"),
+      addBtn: document.getElementById("addToCampaignBtn"),
+      contactsTbody: document.getElementById("contactsTbody"),
+
+      sendBtn: document.getElementById("sendBtn"),
+      sendStatus: document.getElementById("sendStatus"),
+      sendHelp: document.getElementById("sendHelp"),
+      sendModeTag: document.getElementById("sendModeTag"),
+      reviewSummary: document.getElementById("reviewSummary"),
+
+      sendLogTbody: document.getElementById("sendLogTbody"),
+      photosContainer: document.getElementById("photosContainer"),
+
+      devContact: document.getElementById("devContact"),
+      devMediaUrl: document.getElementById("devMediaUrl"),
+      devSimulateBtn: document.getElementById("devSimulateBtn"),
+      devStatus: document.getElementById("devStatus")
+    };
+
+    const state = { globalContacts: [], campaignContacts: [], campaign: null };
+
+    async function fetchJSON(url, options = {}) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function fmt(ts) {
+      if (!ts) return "–";
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
+    }
+
+    function computeUnsentCount() {
+      return state.campaignContacts.filter(c => !c.firstSentAt).length;
+    }
+
+    function updateReviewSummary() {
+      if (!state.campaign) {
+        els.reviewSummary.textContent = "";
+        return;
+      }
+      const total = state.campaignContacts.length;
+      const unsent = computeUnsentCount();
+      const sendCount = typeof state.campaign.sendCount === "number" ? state.campaign.sendCount : 0;
+
+      let parts = [];
+      parts.push(`Total contacts: ${total}`);
+      parts.push(`Unsent contacts: ${unsent}`);
+      parts.push(`Campaign sends so far: ${sendCount}`);
+      if (state.campaign.message) {
+        parts.push(`Message: "${state.campaign.message.slice(0, 60)}${state.campaign.message.length > 60 ? "…" : ""}"`);
+      } else {
+        const current = els.message.value.trim();
+        parts.push(`Message (draft): "${current.slice(0, 60)}${current.length > 60 ? "…" : ""}"`);
+      }
+
+      els.reviewSummary.textContent = parts.join(" · ");
+    }
+
+    function updateSendUX() {
+      const total = state.campaignContacts.length;
+      const unsent = computeUnsentCount();
+      const msgDraft = els.message.value.trim();
+      const storedMessage = state.campaign?.message || "";
+      const effectiveMsg = state.campaign?.isLocked ? storedMessage : msgDraft;
+
+      if (!state.campaign) {
+        els.unsentBadge.textContent = "";
+        return;
+      }
+
+      els.unsentBadge.textContent = `Unsent contacts: ${unsent}`;
+      els.unsentBadge.className = "badge " + (unsent > 0 ? "okBadge" : "danger");
+
+      if (state.campaign.isLocked) {
+        els.lockBadge.textContent = `🔒 Locked · ${fmt(state.campaign.lockedAt)}`;
+        els.sendModeTag.textContent = "Incremental send";
+        els.sendBtn.textContent = "Send to NEW contacts";
+        els.sendHelp.innerHTML =
+          `This campaign is locked. The message below is fixed from the first send and reused. ` +
+          `Clicking send will target only contacts that <strong>have not been sent</strong> yet.`;
+        els.message.disabled = true;
+        els.message.value = storedMessage || "";
+        els.messageHint.textContent = storedMessage
+          ? "Message locked from initial send."
+          : "Message locked, but empty (unexpected).";
+        els.messageHint.style.color = "#6b7280";
+
+        els.sendBtn.disabled = (unsent === 0);
+        if (unsent === 0) {
+          els.sendHelp.innerHTML += `<br><span class="small">Add a new contact to enable incremental sending.</span>`;
+        }
+      } else {
+        els.lockBadge.textContent = "🟢 Not locked";
+        els.sendModeTag.textContent = "Initial send";
+        els.sendBtn.textContent = "Lock & Send (ALL contacts)";
+        els.sendHelp.innerHTML =
+          `First send will <strong>lock</strong> this message and target <strong>all contacts</strong> currently in the campaign. ` +
+          `You can still add contacts later and send only to those new contacts.`;
+        els.message.disabled = false;
+        els.messageHint.textContent = "This message will be saved and locked on the first send.";
+        els.messageHint.style.color = "#6b7280";
+
+        els.sendBtn.disabled = (total === 0 || effectiveMsg.length === 0);
+        if (total === 0) {
+          els.sendHelp.innerHTML += `<br><span class="small">Add at least one contact to enable sending.</span>`;
+        } else if (!effectiveMsg.length) {
+          els.sendHelp.innerHTML += `<br><span class="small">Enter a message to enable sending.</span>`;
+        }
+      }
+
+      updateReviewSummary();
+      renderDevContactSelect();
+    }
+
+    async function loadCampaign() {
+      const data = await fetchJSON(`/api/campaigns/${encodeURIComponent(campaignId)}`);
+      state.campaign = data.campaign;
+
+      els.campaignName.textContent = state.campaign.name;
+      els.campaignMeta.textContent =
+        `Contacts: ${state.campaign.contactCount} · Photos: ${state.campaign.responseCount} · Updated: ${fmt(state.campaign.lastUpdated)}`;
+
+      if (state.campaign.message && !els.message.value.trim()) {
+        els.message.value = state.campaign.message;
+      }
+
+      updateSendUX();
+    }
+
+    async function loadGlobalContacts() {
+      const data = await fetchJSON("/api/global-contacts");
+      state.globalContacts = data.contacts || [];
+    }
+
+    async function loadCampaignContacts() {
+      const data = await fetchJSON(`/api/contacts?campaignId=${encodeURIComponent(campaignId)}`);
+      state.campaignContacts = data.contacts || [];
+      updateSendUX();
+    }
+
+    function renderGlobalSelect() {
+      const used = new Set(state.campaignContacts.map(m => m.contactId));
+      const available = state.globalContacts.filter(gc => !used.has(gc.id));
+
+      els.globalSelect.innerHTML = "";
+
+      if (state.globalContacts.length === 0) {
+        els.globalSelect.innerHTML = `<option value="">No contacts yet. Create some on Contacts.</option>`;
+        els.globalSelect.disabled = true;
+        els.addBtn.disabled = true;
+        return;
+      }
+
+      if (available.length === 0) {
+        els.globalSelect.innerHTML = `<option value="">All contacts already in this campaign.</option>`;
+        els.globalSelect.disabled = true;
+        els.addBtn.disabled = true;
+        return;
+      }
+
+      els.globalSelect.disabled = false;
+      els.addBtn.disabled = false;
+
+      const ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = "Select a contact to add…";
+      els.globalSelect.appendChild(ph);
+
+      for (const c of available) {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.phoneNumber})`;
+        els.globalSelect.appendChild(opt);
+      }
+    }
+
+    function renderCampaignContacts() {
+      const rows = state.campaignContacts;
+      els.contactsTbody.innerHTML = "";
+
+      if (rows.length === 0) {
+        els.contactsTbody.innerHTML = `<tr><td colspan="5" class="small">No contacts yet.</td></tr>`;
+        return;
+      }
+
+      for (const c of rows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <a href="contact.html?id=${encodeURIComponent(c.contactId)}">
+              ${c.name}
+            </a>
+          </td>
+          <td>${c.phoneNumber}</td>
+          <td class="small">${fmt(c.firstSentAt)}</td>
+          <td class="small">${fmt(c.lastOutboundAt)}</td>
+          <td><button class="secondary" data-mid="${c.id}">Remove</button></td>
+        `;
+        els.contactsTbody.appendChild(tr);
+      }
+
+      els.contactsTbody.querySelectorAll("button[data-mid]").forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm("Remove this contact from the campaign?")) return;
+          await fetchJSON(`/api/contacts/${encodeURIComponent(btn.dataset.mid)}`, { method: "DELETE" });
+          await refreshAll();
+        };
+      });
+    }
+
+    function renderDevContactSelect() {
+      if (!els.devContact || !els.devSimulateBtn) return;
+
+      const sel = els.devContact;
+      sel.innerHTML = "";
+
+      if (!state.campaignContacts.length) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No contacts in this campaign yet.";
+        sel.appendChild(opt);
+        sel.disabled = true;
+        els.devSimulateBtn.disabled = true;
+        els.devStatus.textContent = "Add a contact first.";
+        return;
+      }
+
+      sel.disabled = false;
+      els.devSimulateBtn.disabled = false;
+      els.devStatus.textContent = "";
+
+      const ph = document.createElement("option");
+      ph.value = "";
+      ph.textContent = "Select a contact…";
+      sel.appendChild(ph);
+
+      for (const c of state.campaignContacts) {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.phoneNumber})`;
+        sel.appendChild(opt);
+      }
+    }
+
+    async function addToCampaign() {
+      const contactId = els.globalSelect.value;
+      if (!contactId) return alert("Select a contact first.");
+
+      await fetchJSON("/api/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId, contactId })
+      });
+
+      await refreshAll();
+    }
+
+    async function loadSendLog() {
+      const data = await fetchJSON(`/api/send-log?campaignId=${encodeURIComponent(campaignId)}`);
+      const events = (data.events || []).slice().sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+
+      els.sendLogTbody.innerHTML = "";
+      if (events.length === 0) {
+        els.sendLogTbody.innerHTML = `<tr><td colspan="4" class="small">No sends yet.</td></tr>`;
+        return;
+      }
+
+      for (const e of events) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="small">${fmt(e.sentAt)}</td>
+          <td><span class="badge">${e.type}</span></td>
+          <td>${e.targetCount}</td>
+          <td class="small" title="${(e.message || "").replaceAll('"','&quot;')}">${(e.message || "").slice(0, 60)}${(e.message || "").length > 60 ? "…" : ""}</td>
+        `;
+        els.sendLogTbody.appendChild(tr);
+      }
+    }
+
+    async function loadPhotos() {
+      const data = await fetchJSON(`/api/photos?campaignId=${encodeURIComponent(campaignId)}`);
+      const items = data.data || [];
+
+      if (items.length === 0) {
+        els.photosContainer.innerHTML = `<div class="small">No photos yet.</div>`;
+        return;
+      }
+
+      els.photosContainer.innerHTML = "";
+
+      for (const sender of items) {
+        const block = document.createElement("div");
+        block.style.marginBottom = "14px";
+
+        block.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <strong>${sender.name || sender.phoneNumber}</strong><br>
+              <span class="small">${sender.phoneNumber}</span>
+            </div>
+            <span class="badge">${sender.photos.length} photo(s)</span>
+          </div>
+        `;
+
+        const grid = document.createElement("div");
+        grid.className = "photo-grid";
+
+        for (const p of sender.photos) {
+          const card = document.createElement("div");
+          card.className = "photo-card";
+
+          const img = document.createElement("img");
+          img.src = p.url;
+          img.alt = p.filename;
+          card.appendChild(img);
+
+          const meta = document.createElement("div");
+          meta.className = "photo-meta";
+
+          const fn = document.createElement("div");
+          fn.textContent = p.filename;
+          meta.appendChild(fn);
+
+          const dt = document.createElement("div");
+          dt.className = "small-text";
+          dt.textContent = fmt(p.createdAt);
+          meta.appendChild(dt);
+
+          if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
+            const badge = document.createElement("div");
+            badge.className = "small-text";
+            badge.style.marginTop = "4px";
+            badge.style.padding = "2px 6px";
+            badge.style.border = "1px solid #f59e0b";
+            badge.style.borderRadius = "999px";
+            badge.style.display = "inline-block";
+            badge.style.background = "#fffbeb";
+            badge.textContent = `⚠ Also used in ${p.similarInOtherCampaigns.length} other campaign(s)`;
+            meta.appendChild(badge);
+          }
+
+          card.appendChild(meta);
+          grid.appendChild(card);
+        }
+
+        block.appendChild(grid);
+        els.photosContainer.appendChild(block);
+      }
+    }
+
+    async function sendCampaign() {
+      const isLocked = !!state.campaign?.isLocked;
+      let msgToUse = "";
+
+      if (!isLocked) {
+        const draft = els.message.value.trim();
+        if (!draft) {
+          els.sendStatus.textContent = "Please enter a message for this campaign.";
+          els.sendStatus.className = "status err";
+          return;
+        }
+        msgToUse = draft;
+      } else {
+        msgToUse = state.campaign.message || "";
+        if (!msgToUse) {
+          els.sendStatus.textContent = "Campaign has no stored message; cannot send.";
+          els.sendStatus.className = "status err";
+          return;
+        }
+      }
+
+      const unsent = computeUnsentCount();
+      if (isLocked && unsent === 0) {
+        els.sendStatus.textContent = "No new (unsent) contacts to send to.";
+        els.sendStatus.className = "status err";
+        return;
+      }
+      if (!isLocked && state.campaignContacts.length === 0) {
+        els.sendStatus.textContent = "Add at least one contact before sending.";
+        els.sendStatus.className = "status err";
+        return;
+      }
+
+      els.sendBtn.disabled = true;
+      els.sendStatus.textContent = "Recording send…";
+      els.sendStatus.className = "status neutral";
+
+      try {
+        const res = await fetchJSON("/api/send-campaign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ campaignId, message: msgToUse })
+        });
+
+        els.sendStatus.textContent =
+          `Recorded ${res.sendType} send at ${fmt(res.sentAt)} for ${res.updatedCount} contact(s).`;
+        els.sendStatus.className = "status ok";
+
+        await refreshAll();
+      } catch (e) {
+        els.sendStatus.textContent = "Error: " + e.message;
+        els.sendStatus.className = "status err";
+      }
+    }
+
+    async function simulateInbound() {
+      els.devStatus.textContent = "";
+      const membershipId = els.devContact.value;
+      const mediaUrl = els.devMediaUrl.value.trim();
+
+      if (!membershipId) {
+        els.devStatus.textContent = "Choose a contact first.";
+        return;
+      }
+      if (!mediaUrl) {
+        els.devStatus.textContent = "Enter an image URL.";
+        return;
+      }
+
+      const membership = state.campaignContacts.find(c => c.id === membershipId);
+      if (!membership || !membership.phoneNumber) {
+        els.devStatus.textContent = "Could not find that contact’s phone number.";
+        return;
+      }
+
+      els.devStatus.textContent = "Simulating inbound MMS…";
+
+      try {
+        await fetchJSON("/api/dev/simulate-inbound", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phoneNumber: membership.phoneNumber,
+            mediaUrl
+          })
+        });
+
+        els.devStatus.textContent = "Inbound simulated. Refreshing photos…";
+        await loadPhotos();
+        els.devStatus.textContent = "Inbound simulated.";
+      } catch (e) {
+        els.devStatus.textContent = "Error: " + e.message;
+      }
+    }
+
+    async function refreshAll() {
+      await loadGlobalContacts();
+      await loadCampaignContacts();
+      renderCampaignContacts();
+      renderGlobalSelect();
+      renderDevContactSelect();
+      await loadCampaign();
+      await loadSendLog();
+      await loadPhotos();
+      updateSendUX();
+    }
+
+    els.addBtn.onclick = addToCampaign;
+    els.sendBtn.onclick = sendCampaign;
+    els.message.addEventListener("input", () => {
+      if (!state.campaign?.isLocked) {
+        updateSendUX();
+      }
+    });
+    els.devSimulateBtn.onclick = simulateInbound;
+
+    (async function init(){
+      if (!campaignId) return;
+      await refreshAll();
+    })();
+  </script>
+</body>
+</html>

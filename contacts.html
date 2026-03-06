@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contacts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; background:#f5f5f7; color:#111827; }
+    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+    header a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 8px; border-radius:4px; border:1px solid #4b5563; }
+    header a:hover { background:#374151; }
+    main { max-width:900px; margin:20px auto; padding:0 16px; display:flex; flex-direction:column; gap:16px; }
+    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+    label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
+    input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; }
+    button { border-radius:999px; border:none; padding:7px 14px; font-size:14px; cursor:pointer; background:#111827; color:#fff; font-weight:600; }
+    button.secondary { background:#e5e7eb; color:#111827; }
+    .row { display:flex; gap:10px; }
+    .row > div { flex:1; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
+    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; }
+    th { font-size:12px; color:#6b7280; }
+    .small { font-size:12px; color:#6b7280; }
+    .status { min-height:18px; font-size:13px; margin-top:8px; }
+    .ok { color:#16a34a; } .err { color:#dc2626; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <a href="dashboard.html">&larr; Campaigns</a>
+      <div style="font-weight:700;">Contacts</div>
+    </div>
+    <div class="small">Global address book</div>
+  </header>
+
+  <main>
+    <section>
+      <div style="font-weight:700; margin-bottom:6px;">Add Contact</div>
+      <div class="small" style="margin-bottom:10px;">
+        Create contacts here, then add them into campaigns from the campaign page.
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="name">Name</label>
+          <input id="name" placeholder="Jane Doe" />
+        </div>
+        <div>
+          <label for="phone">Phone (US)</label>
+          <input id="phone" placeholder="+15555550123" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <button id="add">Add</button>
+      </div>
+
+      <div id="status" class="status"></div>
+    </section>
+
+    <section>
+      <div style="font-weight:700; margin-bottom:6px;">All Contacts</div>
+      <div class="small">These can be attached to any campaign.</div>
+
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Created</th><th></th></tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="4" class="small">No contacts yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const nameEl = document.getElementById("name");
+    const phoneEl = document.getElementById("phone");
+    const addBtn = document.getElementById("add");
+    const statusEl = document.getElementById("status");
+    const tbody = document.getElementById("tbody");
+
+    function isLikelyUSPhone(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      return digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
+    }
+
+    async function fetchJSON(url, options = {}) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function fmt(ts) {
+      if (!ts) return "";
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
+    }
+
+    async function load() {
+      const data = await fetchJSON("/api/global-contacts");
+      const contacts = data.contacts || [];
+      tbody.innerHTML = "";
+
+      if (contacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="small">No contacts yet.</td></tr>';
+        return;
+      }
+
+      for (const c of contacts) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${c.name}</td>
+          <td>${c.phoneNumber}</td>
+          <td class="small">${fmt(c.createdAt)}</td>
+          <td><button class="secondary" data-id="${c.id}">Delete</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      tbody.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm("Delete this contact and remove from all campaigns?")) return;
+          await fetchJSON("/api/global-contacts/" + encodeURIComponent(btn.dataset.id), { method: "DELETE" });
+          await load();
+        };
+      });
+    }
+
+    addBtn.onclick = async () => {
+      const name = nameEl.value.trim();
+      const phone = phoneEl.value.trim();
+
+      statusEl.className = "status";
+      statusEl.textContent = "";
+
+      if (!name || !phone) {
+        statusEl.textContent = "Please enter name and phone.";
+        statusEl.className = "status err";
+        return;
+      }
+      if (!isLikelyUSPhone(phone)) {
+        statusEl.textContent = "Please enter a valid US phone number (10 or 11 digits).";
+        statusEl.className = "status err";
+        return;
+      }
+
+      try {
+        await fetchJSON("/api/global-contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phoneNumber: phone })
+        });
+        nameEl.value = "";
+        phoneEl.value = "";
+        statusEl.textContent = "Saved.";
+        statusEl.className = "status ok";
+        await load();
+      } catch (e) {
+        statusEl.textContent = "Error: " + e.message;
+        statusEl.className = "status err";
+      }
+    };
+
+    load();
+  </script>
+</body>
+</html>

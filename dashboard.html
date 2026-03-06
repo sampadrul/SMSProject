@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Campaigns</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin:0; background:#f5f5f7; color:#111827; }
+    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
+    header h1 { margin:0; font-size:20px; font-weight:700; }
+    header .right a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 10px; border-radius:999px; border:1px solid #4b5563; margin-left:8px; }
+    header .right a:hover { background:#374151; }
+    main { max-width:900px; margin:20px auto; padding:0 16px 40px; }
+    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
+    h2 { margin:0 0 8px; font-size:17px; }
+    p.subtle { margin:0 0 12px; font-size:13px; color:#6b7280; }
+    label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
+    input[type="text"] { width:100%; box-sizing:border-box; padding:7px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; }
+    button { border-radius:999px; border:none; padding:7px 14px; font-size:14px; cursor:pointer; background:#111827; color:#fff; font-weight:700; }
+    button.secondary { background:#e5e7eb; color:#111827; font-weight:600; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
+    th { font-size:12px; color:#6b7280; }
+    .small { font-size:11px; color:#6b7280; }
+    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; }
+    .pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; }
+    .row-actions button { margin-right:4px; }
+    @media (max-width: 720px){
+      table { font-size:12px; }
+      th:nth-child(3), td:nth-child(3) { display:none; } /* hide Photos on very small screens */
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Campaigns</h1>
+      <div class="small">Manage photo request campaigns and see how often each has been sent.</div>
+    </div>
+    <div class="right">
+  <a href="contacts.html">Contacts</a>
+  <a href="photos.html">Photos</a>
+</div>
+
+  </header>
+
+  <main>
+    <section>
+      <h2>Create Campaign</h2>
+      <p class="subtle">Give your campaign a short, memorable name. You’ll add contacts and sends on the next screen.</p>
+      <label for="campaignName">Campaign name</label>
+      <input id="campaignName" type="text" placeholder="e.g. Family Portraits · Spring 2026" />
+      <div style="margin-top:8px;">
+        <button id="createBtn">Create</button>
+        <span id="createStatus" class="small" style="margin-left:8px;"></span>
+      </div>
+    </section>
+
+    <section style="margin-top:20px;">
+      <h2>Existing Campaigns</h2>
+      <p class="subtle">
+        Each row shows how many times a campaign has been sent.
+        The send count includes the initial lock-and-send plus any incremental sends to new contacts.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Sends</th>
+            <th>Contacts</th>
+            <th>Photos</th>
+            <th>Last updated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="campaignsTbody">
+          <tr><td colspan="6" class="small">No campaigns yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const els = {
+      nameInput: document.getElementById("campaignName"),
+      createBtn: document.getElementById("createBtn"),
+      createStatus: document.getElementById("createStatus"),
+      campaignsTbody: document.getElementById("campaignsTbody")
+    };
+
+    async function fetchJSON(url, options = {}) {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    function fmt(ts) {
+      if (!ts) return "–";
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
+    }
+
+    async function loadCampaigns() {
+      const data = await fetchJSON("/api/campaigns");
+      const campaigns = data.campaigns || [];
+
+      els.campaignsTbody.innerHTML = "";
+
+      if (campaigns.length === 0) {
+        els.campaignsTbody.innerHTML = `<tr><td colspan="6" class="small">No campaigns yet.</td></tr>`;
+        return;
+      }
+
+      // newest first
+      campaigns.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      for (const c of campaigns) {
+        const tr = document.createElement("tr");
+
+        const sendCount = typeof c.sendCount === "number" ? c.sendCount : 0;
+
+        tr.innerHTML = `
+          <td>
+            <div>${c.name}</div>
+            <div class="small">Created: ${fmt(c.createdAt)}</div>
+          </td>
+          <td>
+            <span class="badge">${sendCount}</span>
+          </td>
+          <td>${c.contactCount ?? 0}</td>
+          <td>${c.responseCount ?? 0}</td>
+          <td class="small">${fmt(c.lastUpdated)}</td>
+          <td class="row-actions">
+            <button class="secondary" data-id="${c.id}">Open</button>
+          </td>
+        `;
+        els.campaignsTbody.appendChild(tr);
+      }
+
+      els.campaignsTbody.querySelectorAll("button[data-id]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-id");
+          window.location.href = `campaign.html?id=${encodeURIComponent(id)}`;
+        };
+      });
+    }
+
+    async function createCampaign() {
+      const name = els.nameInput.value.trim();
+      if (!name) {
+        els.createStatus.textContent = "Enter a name first.";
+        els.createStatus.style.color = "#dc2626";
+        return;
+      }
+
+      els.createBtn.disabled = true;
+      els.createStatus.textContent = "Creating…";
+      els.createStatus.style.color = "#6b7280";
+
+      try {
+        const data = await fetchJSON("/api/campaigns", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name })
+        });
+
+        els.createStatus.textContent = "Created.";
+        els.createStatus.style.color = "#16a34a";
+        els.nameInput.value = "";
+
+        await loadCampaigns();
+      } catch (e) {
+        els.createStatus.textContent = "Error: " + e.message;
+        els.createStatus.style.color = "#dc2626";
+      } finally {
+        els.createBtn.disabled = false;
+      }
+    }
+
+    els.createBtn.onclick = createCampaign;
+
+    (async function init() {
+      await loadCampaigns();
+    })();
+  </script>
+</body>
+</html>
