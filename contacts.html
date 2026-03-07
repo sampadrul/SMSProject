@@ -5,24 +5,33 @@
   <title>Contacts</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin: 0; background:#f5f5f7; color:#111827; }
-    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
-    header a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 8px; border-radius:4px; border:1px solid #4b5563; }
-    header a:hover { background:#374151; }
-    main { max-width:900px; margin:20px auto; padding:0 16px; display:flex; flex-direction:column; gap:16px; }
-    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-    label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
-    input { width:100%; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; }
-    button { border-radius:999px; border:none; padding:7px 14px; font-size:14px; cursor:pointer; background:#111827; color:#fff; font-weight:600; }
-    button.secondary { background:#e5e7eb; color:#111827; }
-    .row { display:flex; gap:10px; }
-    .row > div { flex:1; }
-    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
-    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; }
-    th { font-size:12px; color:#6b7280; }
-    .small { font-size:12px; color:#6b7280; }
-    .status { min-height:18px; font-size:13px; margin-top:8px; }
-    .ok { color:#16a34a; } .err { color:#dc2626; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
+    header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
+    header a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); }
+    header a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    main { max-width: 900px; margin: 24px auto; padding: 0 20px 48px; display: flex; flex-direction: column; gap: 16px; }
+    section { background: #fff; border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(37,99,235,0.06), 0 4px 16px rgba(37,99,235,0.05); border: 1px solid #e0e7ff; }
+    label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 5px; color: #374151; letter-spacing: 0.04em; text-transform: uppercase; }
+    input { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1.5px solid #c7d7fe; font-size: 14px; font-family: inherit; background: #f8faff; color: #0f172a; transition: border-color 0.15s, box-shadow 0.15s; }
+    input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    button { border-radius: 8px; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 600; font-family: inherit; box-shadow: 0 1px 3px rgba(37,99,235,0.3); transition: all 0.15s ease; }
+    button:hover:not(:disabled) { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.4); transform: translateY(-1px); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button.secondary { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; box-shadow: none; }
+    button.secondary:hover:not(:disabled) { background: #dbeafe; border-color: #93c5fd; transform: none; box-shadow: none; }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    thead tr { background: #f8faff; }
+    th { font-size: 11px; color: #6366f1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 2px solid #e0e7ff; text-align: left; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f0f4ff; text-align: left; }
+    tbody tr:hover td { background: #f8faff; }
+    tbody tr:last-child td { border-bottom: none; }
+    .small { font-size: 11px; color: #64748b; }
+    .status { min-height: 18px; font-size: 13px; margin-top: 8px; }
+    .ok { color: #059669; } .err { color: #dc2626; }
   </style>
 </head>
 <body>

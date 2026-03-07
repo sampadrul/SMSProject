@@ -183,6 +183,11 @@ async function sendSmsViaTwilio({ to, body }) {
   };
 }
 
+// ---------- Root ----------
+app.get("/", (req, res) => {
+  res.redirect("/dashboard.html");
+});
+
 // ---------- Health ----------
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
