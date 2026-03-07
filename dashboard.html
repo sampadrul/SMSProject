@@ -5,30 +5,45 @@
   <title>Campaigns</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin:0; background:#f5f5f7; color:#111827; }
-    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
-    header h1 { margin:0; font-size:20px; font-weight:700; }
-    header .right a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 10px; border-radius:999px; border:1px solid #4b5563; margin-left:8px; }
-    header .right a:hover { background:#374151; }
-    main { max-width:900px; margin:20px auto; padding:0 16px 40px; }
-    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-    h2 { margin:0 0 8px; font-size:17px; }
-    p.subtle { margin:0 0 12px; font-size:13px; color:#6b7280; }
-    label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
-    input[type="text"] { width:100%; box-sizing:border-box; padding:7px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; }
-    button { border-radius:999px; border:none; padding:7px 14px; font-size:14px; cursor:pointer; background:#111827; color:#fff; font-weight:700; }
-    button.secondary { background:#e5e7eb; color:#111827; font-weight:600; }
-    button:disabled { opacity:.6; cursor:not-allowed; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
-    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
-    th { font-size:12px; color:#6b7280; }
-    .small { font-size:11px; color:#6b7280; }
-    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; }
-    .pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; }
-    .row-actions button { margin-right:4px; }
-    @media (max-width: 720px){
-      table { font-size:12px; }
-      th:nth-child(3), td:nth-child(3) { display:none; } /* hide Photos on very small screens */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
+    header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    header .right a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); margin-left: 8px; }
+    header .right a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    header .small { color: #bfdbfe; }
+    main { max-width: 900px; margin: 24px auto; padding: 0 20px 48px; }
+    section { background: #fff; border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(37,99,235,0.06), 0 4px 16px rgba(37,99,235,0.05); border: 1px solid #e0e7ff; }
+    h2 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; }
+    p.subtle { margin: 0 0 14px; font-size: 13px; color: #64748b; line-height: 1.5; }
+    label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 5px; color: #374151; letter-spacing: 0.04em; text-transform: uppercase; }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 8px; border: 1.5px solid #c7d7fe; font-size: 14px; background: #f8faff; color: #0f172a; font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; }
+    input[type="text"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    button { border-radius: 8px; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 600; font-family: inherit; box-shadow: 0 1px 3px rgba(37,99,235,0.3); transition: all 0.15s ease; }
+    button:hover:not(:disabled) { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.4); transform: translateY(-1px); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button.secondary { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; box-shadow: none; font-weight: 600; }
+    button.secondary:hover:not(:disabled) { background: #dbeafe; border-color: #93c5fd; transform: none; box-shadow: none; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    thead tr { background: #f8faff; }
+    th { font-size: 11px; color: #6366f1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 2px solid #e0e7ff; text-align: left; vertical-align: middle; white-space: nowrap; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { color: #4f46e5; background: #eef2ff; }
+    th.sort-active { color: #2563eb; }
+    th .sort-icon { margin-left: 4px; opacity: 0.5; font-style: normal; }
+    th.sort-active .sort-icon { opacity: 1; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f0f4ff; text-align: left; vertical-align: middle; }
+    tbody tr:hover td { background: #f8faff; }
+    tbody tr:last-child td { border-bottom: none; }
+    .small { font-size: 11px; color: #64748b; }
+    .badge { display: inline-flex; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #dbeafe; color: #1d4ed8; border: none; }
+    .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1.5px solid #bfdbfe; background: #eff6ff; color: #2563eb; }
+    .row-actions button { margin-right: 4px; }
+    @media (max-width: 720px) {
+      table { font-size: 12px; }
+      th:nth-child(3), td:nth-child(3), th:nth-child(7), td:nth-child(7) { display: none; }
     }
   </style>
 </head>
@@ -66,16 +81,17 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Sends</th>
-            <th>Contacts</th>
-            <th>Photos</th>
-            <th>Last updated</th>
+            <th class="sortable" data-key="name">Name <i class="sort-icon">↕</i></th>
+            <th class="sortable" data-key="createdAt">Created <i class="sort-icon">↕</i></th>
+            <th class="sortable" data-key="sendCount">Sends <i class="sort-icon">↕</i></th>
+            <th class="sortable" data-key="contactCount">Contacts <i class="sort-icon">↕</i></th>
+            <th class="sortable" data-key="responseCount">Photos <i class="sort-icon">↕</i></th>
+            <th class="sortable" data-key="lastUpdated">Last Updated <i class="sort-icon">↕</i></th>
             <th></th>
           </tr>
         </thead>
         <tbody id="campaignsTbody">
-          <tr><td colspan="6" class="small">No campaigns yet.</td></tr>
+          <tr><td colspan="7" class="small">No campaigns yet.</td></tr>
         </tbody>
       </table>
     </section>
@@ -89,6 +105,9 @@
       campaignsTbody: document.getElementById("campaignsTbody")
     };
 
+    let allCampaigns = [];
+    let sortState = { key: "createdAt", dir: "desc" };
+
     async function fetchJSON(url, options = {}) {
       const res = await fetch(url, options);
       if (!res.ok) throw new Error(await res.text());
@@ -101,33 +120,61 @@
       return Number.isNaN(d.getTime()) ? ts : d.toLocaleString();
     }
 
-    async function loadCampaigns() {
-      const data = await fetchJSON("/api/campaigns");
-      const campaigns = data.campaigns || [];
+    function sortCampaigns(campaigns) {
+      const { key, dir } = sortState;
+      return [...campaigns].sort((a, b) => {
+        let av = a[key] ?? "";
+        let bv = b[key] ?? "";
+        // numeric keys
+        if (["sendCount", "contactCount", "responseCount"].includes(key)) {
+          av = Number(av) || 0;
+          bv = Number(bv) || 0;
+          return dir === "asc" ? av - bv : bv - av;
+        }
+        // date keys
+        if (["createdAt", "lastUpdated"].includes(key)) {
+          av = av ? new Date(av).getTime() : 0;
+          bv = bv ? new Date(bv).getTime() : 0;
+          return dir === "asc" ? av - bv : bv - av;
+        }
+        // string keys
+        av = String(av).toLowerCase();
+        bv = String(bv).toLowerCase();
+        return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
+    }
 
+    function updateHeaders() {
+      document.querySelectorAll("th.sortable").forEach(th => {
+        const key = th.dataset.key;
+        const icon = th.querySelector(".sort-icon");
+        th.classList.toggle("sort-active", key === sortState.key);
+        if (key === sortState.key) {
+          icon.textContent = sortState.dir === "asc" ? "↑" : "↓";
+        } else {
+          icon.textContent = "↕";
+        }
+      });
+    }
+
+    function renderCampaigns() {
       els.campaignsTbody.innerHTML = "";
 
-      if (campaigns.length === 0) {
-        els.campaignsTbody.innerHTML = `<tr><td colspan="6" class="small">No campaigns yet.</td></tr>`;
+      if (allCampaigns.length === 0) {
+        els.campaignsTbody.innerHTML = `<tr><td colspan="7" class="small">No campaigns yet.</td></tr>`;
         return;
       }
 
-      // newest first
-      campaigns.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const sorted = sortCampaigns(allCampaigns);
 
-      for (const c of campaigns) {
+      for (const c of sorted) {
         const tr = document.createElement("tr");
-
         const sendCount = typeof c.sendCount === "number" ? c.sendCount : 0;
 
         tr.innerHTML = `
-          <td>
-            <div>${c.name}</div>
-            <div class="small">Created: ${fmt(c.createdAt)}</div>
-          </td>
-          <td>
-            <span class="badge">${sendCount}</span>
-          </td>
+          <td><div>${c.name}</div></td>
+          <td class="small">${fmt(c.createdAt)}</td>
+          <td><span class="badge">${sendCount}</span></td>
           <td>${c.contactCount ?? 0}</td>
           <td>${c.responseCount ?? 0}</td>
           <td class="small">${fmt(c.lastUpdated)}</td>
@@ -140,11 +187,31 @@
 
       els.campaignsTbody.querySelectorAll("button[data-id]").forEach(btn => {
         btn.onclick = () => {
-          const id = btn.getAttribute("data-id");
-          window.location.href = `campaign.html?id=${encodeURIComponent(id)}`;
+          window.location.href = `campaign.html?id=${encodeURIComponent(btn.getAttribute("data-id"))}`;
         };
       });
     }
+
+    async function loadCampaigns() {
+      const data = await fetchJSON("/api/campaigns");
+      allCampaigns = data.campaigns || [];
+      updateHeaders();
+      renderCampaigns();
+    }
+
+    document.querySelectorAll("th.sortable").forEach(th => {
+      th.onclick = () => {
+        const key = th.dataset.key;
+        if (sortState.key === key) {
+          sortState.dir = sortState.dir === "asc" ? "desc" : "asc";
+        } else {
+          sortState.key = key;
+          sortState.dir = key === "name" ? "asc" : "desc";
+        }
+        updateHeaders();
+        renderCampaigns();
+      };
+    });
 
     async function createCampaign() {
       const name = els.nameInput.value.trim();
@@ -159,7 +226,7 @@
       els.createStatus.style.color = "#6b7280";
 
       try {
-        const data = await fetchJSON("/api/campaigns", {
+        await fetchJSON("/api/campaigns", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name })

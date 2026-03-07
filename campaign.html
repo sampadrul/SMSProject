@@ -5,44 +5,69 @@
   <title>Campaign</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin:0; background:#f5f5f7; color:#111827; }
-    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
-    header .left { display:flex; align-items:center; gap:12px; }
-    header a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 8px; border-radius:4px; border:1px solid #4b5563; }
-    header a:hover { background:#374151; }
-    header h1 { margin:0; font-size:18px; font-weight:700; }
-    header .right a { margin-left:8px; border-radius:999px; }
-    main { max-width:1100px; margin:20px auto; padding:0 16px 40px; display:grid; grid-template-columns:1.1fr 1fr; gap:20px; }
-    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-    h2 { margin:0 0 8px; font-size:17px; }
-    h3 { margin:10px 0 4px; font-size:15px; }
-    p.subtle { margin:0 0 12px; font-size:13px; color:#6b7280; }
-    label { font-size:13px; font-weight:600; display:block; margin-bottom:4px; }
-    select, textarea { width:100%; box-sizing:border-box; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; font-family:inherit; }
-    textarea { min-height:70px; resize:vertical; }
-    input[type="text"] { width:100%; box-sizing:border-box; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; font-size:14px; font-family:inherit; }
-    button { border-radius:999px; border:none; padding:7px 14px; font-size:14px; cursor:pointer; background:#111827; color:#fff; font-weight:700; }
-    button.secondary { background:#e5e7eb; color:#111827; font-weight:600; }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
-    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
-    th { font-size:12px; color:#6b7280; }
-    .small { font-size:11px; color:#6b7280; }
-    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; }
-    .lock { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; }
-    .danger { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
-    .okBadge { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
-    .status { min-height:18px; margin-top:8px; font-size:13px; }
-    .ok { color:#16a34a; } .err { color:#dc2626; } .neutral { color:#6b7280; }
-    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:10px; }
-    .photo-card { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
-    .photo-card img { width:100%; height:90px; object-fit:cover; display:block; }
-    .photo-meta { padding:4px 6px 6px; font-size:11px; }
-    .small-text { font-size:11px; color:#6b7280; }
-    .step-label { font-size:12px; text-transform:uppercase; letter-spacing:0.05em; color:#6b7280; }
-    .step-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
-    .pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; }
-    @media (max-width: 900px){ main{ grid-template-columns:1fr; } }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
+    header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
+    header .left { display: flex; align-items: center; gap: 14px; }
+    header a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); }
+    header a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    header .right a { margin-left: 8px; }
+    header .small { color: #bfdbfe; }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 20px 48px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+    section { background: #fff; border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(37,99,235,0.06), 0 4px 16px rgba(37,99,235,0.05); border: 1px solid #e0e7ff; }
+    h2 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; }
+    h3 { margin: 10px 0 4px; font-size: 14px; font-weight: 600; color: #1e3a5f; }
+    p.subtle { margin: 0 0 12px; font-size: 13px; color: #64748b; line-height: 1.5; }
+    label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 5px; color: #374151; letter-spacing: 0.04em; text-transform: uppercase; }
+    select, textarea { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 8px; border: 1.5px solid #c7d7fe; font-size: 14px; font-family: inherit; background: #f8faff; color: #0f172a; transition: border-color 0.15s, box-shadow 0.15s; }
+    textarea { min-height: 70px; resize: vertical; }
+    select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 8px; border: 1.5px solid #c7d7fe; font-size: 14px; font-family: inherit; background: #f8faff; color: #0f172a; transition: border-color 0.15s, box-shadow 0.15s; }
+    input[type="text"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+    button { border-radius: 8px; border: none; padding: 8px 16px; font-size: 13px; cursor: pointer; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 600; font-family: inherit; box-shadow: 0 1px 3px rgba(37,99,235,0.3); transition: all 0.15s ease; }
+    button:hover:not(:disabled) { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 12px rgba(37,99,235,0.4); transform: translateY(-1px); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button.secondary { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; box-shadow: none; }
+    button.secondary:hover:not(:disabled) { background: #dbeafe; border-color: #93c5fd; transform: none; box-shadow: none; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    thead tr { background: #f8faff; }
+    th { font-size: 11px; color: #6366f1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 2px solid #e0e7ff; text-align: left; vertical-align: middle; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f0f4ff; text-align: left; vertical-align: middle; }
+    tbody tr:hover td { background: #f8faff; }
+    tbody tr:last-child td { border-bottom: none; }
+    .small { font-size: 11px; color: #64748b; }
+    .badge { display: inline-flex; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #dbeafe; color: #1d4ed8; border: none; }
+    .lock { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; font-size: 11px; border: 1.5px solid #bfdbfe; background: #eff6ff; color: #2563eb; }
+    .danger { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+    .okBadge { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+    .status { min-height: 18px; margin-top: 8px; font-size: 13px; }
+    .ok { color: #059669; } .err { color: #dc2626; } .neutral { color: #64748b; }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
+    .photo-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; }
+    .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
+    .photo-card img { width: 100%; height: 90px; object-fit: cover; display: block; }
+    .photo-meta { padding: 4px 6px 6px; font-size: 11px; }
+    .small-text { font-size: 11px; color: #64748b; }
+    .step-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6366f1; }
+    .step-card { position: relative; }
+    .step-header-row { display: flex; align-items: flex-start; gap: 14px; }
+    .step-title-wrap { flex: 1; min-width: 0; }
+    .step-title-wrap h2 { margin: 2px 0 0; }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; background: #2563eb; color: #fff; transition: background 0.2s, color 0.2s; }
+    .step-card.locked .step-num { background: #e0e7ff; color: #94a3b8; }
+    .step-card.done .step-num { background: #059669; color: #fff; }
+    .step-body { padding: 12px 0 8px 42px; }
+    .step-card.locked .step-body { display: none; }
+    .step-card.locked .step-header-row { opacity: 0.4; }
+    .step-card.locked { pointer-events: none; }
+    .step-connector { width: 2px; height: 20px; background: #e0e7ff; margin: 4px 0 4px 13px; }
+    .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1.5px solid #bfdbfe; background: #eff6ff; color: #2563eb; }
+    hr { border: none; border-top: 1px solid #e0e7ff; margin: 20px 0; }
+    a { color: #2563eb; font-weight: 500; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -52,10 +77,6 @@
       <div>
         <div class="small">Campaign</div>
         <h1 id="campaignName">Loading…</h1>
-        <div style="margin-top:4px; display:flex; gap:8px; flex-wrap:wrap;">
-          <span id="lockBadge" class="lock"></span>
-          <span id="unsentBadge" class="badge"></span>
-        </div>
       </div>
     </div>
     <div class="right">
@@ -68,123 +89,106 @@
   <main>
     <section>
       <!-- Step 1: Message -->
-      <div class="step-header">
-        <div>
-          <div class="step-label">Step 1</div>
-          <h2>Message</h2>
+      <div class="step-card" id="step1Card">
+        <div class="step-header-row">
+          <div class="step-num">1</div>
+          <div class="step-title-wrap">
+            <div class="step-label">Step 1</div>
+            <h2>Message</h2>
+          </div>
+          <span id="lockBadge" class="lock"></span>
+        </div>
+        <div class="step-body">
+          <p class="subtle">Set the message for this campaign. On the first send it will be locked and reused for all future incremental sends.</p>
+          <label for="message">Message text</label>
+          <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
+          <div class="small" id="messageHint" style="margin-top:4px;"></div>
         </div>
       </div>
-      <p class="subtle">
-        Set the message for this campaign. On the first send, this message will be locked and reused for
-        all future incremental sends to newly added contacts.
-      </p>
 
-      <label for="message">Message text</label>
-      <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
-      <div class="small" id="messageHint" style="margin-top:4px;"></div>
-
-      <hr style="margin:16px 0;">
+      <div class="step-connector"></div>
 
       <!-- Step 2: Assign contacts -->
-      <div class="step-header">
-        <div>
-          <div class="step-label">Step 2</div>
-          <h2>Assign contacts</h2>
+      <div class="step-card locked" id="step2Card">
+        <div class="step-header-row">
+          <div class="step-num">2</div>
+          <div class="step-title-wrap">
+            <div class="step-label">Step 2</div>
+            <h2>Assign Contacts</h2>
+          </div>
+          <span id="unsentBadge" class="badge"></span>
+        </div>
+        <div class="step-body">
+          <p class="subtle">Add contacts to this campaign. You can keep adding contacts even after the first send — incremental sends target only unsent contacts.</p>
+          <div style="margin-bottom:10px;">
+            <label for="globalSelect">Add existing contact</label>
+            <select id="globalSelect"><option value="">Loading contacts…</option></select>
+            <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+              <button id="addToCampaignBtn">Add to campaign</button>
+              <span class="small">Need someone new? Create them on <a href="contacts.html">Contacts</a>.</span>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>First sent</th><th>Last send</th><th></th></tr></thead>
+            <tbody id="contactsTbody"><tr><td colspan="5" class="small">No contacts yet.</td></tr></tbody>
+          </table>
         </div>
       </div>
-      <p class="subtle">
-        Add existing contacts into this campaign. You can continue adding contacts even after the first send.
-        Incremental sends will only target contacts who have not been sent yet.
-      </p>
 
-      <div style="margin-bottom:10px;">
-        <label for="globalSelect">Add existing contact</label>
-        <select id="globalSelect">
-          <option value="">Loading contacts…</option>
-        </select>
-        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-          <button id="addToCampaignBtn">Add to campaign</button>
-          <span class="small">Need someone new? Create them on <a href="contacts.html">Contacts</a>.</span>
-        </div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>First sent</th>
-            <th>Last send</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="contactsTbody">
-          <tr><td colspan="5" class="small">No contacts yet.</td></tr>
-        </tbody>
-      </table>
-
-      <hr style="margin:16px 0;">
+      <div class="step-connector"></div>
 
       <!-- Step 3: Review & send -->
-      <div class="step-header">
-        <div>
-          <div class="step-label">Step 3</div>
-          <h2>Review & send</h2>
+      <div class="step-card locked" id="step3Card">
+        <div class="step-header-row">
+          <div class="step-num">3</div>
+          <div class="step-title-wrap">
+            <div class="step-label">Step 3</div>
+            <h2>Review &amp; Send</h2>
+          </div>
+          <span id="sendModeTag" class="pill"></span>
+        </div>
+        <div class="step-body">
+          <p class="subtle" id="sendHelp"></p>
+          <div style="margin-bottom:8px;">
+            <div class="small">Summary</div>
+            <div class="small" id="reviewSummary"></div>
+          </div>
+          <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
+            <button id="sendBtn">Send</button>
+          </div>
+          <div id="sendStatus" class="status neutral"></div>
         </div>
       </div>
-      <p class="subtle" id="sendHelp"></p>
 
-      <div style="margin-bottom:8px;">
-        <div class="small">Summary</div>
-        <div class="small" id="reviewSummary"></div>
-      </div>
-
-      <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
-        <button id="sendBtn">Send</button>
-        <span id="sendModeTag" class="pill"></span>
-      </div>
-
-      <div id="sendStatus" class="status neutral"></div>
-
-      <hr style="margin:16px 0;">
-
-      <h3>Send log</h3>
-      <p class="subtle">Every send is recorded here (initial + incremental).</p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Type</th>
-            <th>Targets</th>
-            <th>Message</th>
-          </tr>
-        </thead>
-        <tbody id="sendLogTbody">
-          <tr><td colspan="4" class="small">No sends yet.</td></tr>
-        </tbody>
-      </table>
-
-      <hr style="margin:16px 0;">
-
-      <!-- Dev: simulate inbound MMS -->
-      <h3>Dev: Simulate inbound MMS</h3>
-      <p class="subtle">
-        Use this to pretend Twilio sent us a photo for one of this campaign’s contacts. Great for testing
-        photo assignment and reuse logic without using curl.
-      </p>
-
-      <label for="devContact">Contact</label>
-      <select id="devContact">
-        <option value="">Loading contacts…</option>
-      </select>
-
-      <label for="devMediaUrl" style="margin-top:8px; display:block;">Image URL</label>
-      <input id="devMediaUrl" type="text" placeholder="https://images.pexels.com/..." />
-
-      <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-        <button id="devSimulateBtn">Simulate inbound MMS</button>
-        <span class="small" id="devStatus"></span>
+      <!-- Send Log + Dev — revealed after first send -->
+      <div id="sendLogSection" style="display:none">
+        <div class="step-connector"></div>
+        <div class="step-card" id="step4Card">
+          <div class="step-header-row">
+            <div class="step-num" style="background:#6366f1; font-size:15px;">✦</div>
+            <div class="step-title-wrap">
+              <h2 style="margin:2px 0 0;">Send History</h2>
+            </div>
+          </div>
+          <div class="step-body">
+            <p class="subtle">Every send is recorded here (initial + incremental).</p>
+            <table>
+              <thead><tr><th>When</th><th>Type</th><th>Targets</th><th>Message</th></tr></thead>
+              <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
+            </table>
+            <hr>
+            <h3>Dev: Simulate Inbound MMS</h3>
+            <p class="subtle">Pretend Twilio sent a photo from one of this campaign’s contacts — useful for testing without curl.</p>
+            <label for="devContact">Contact</label>
+            <select id="devContact"><option value="">Loading contacts…</option></select>
+            <label for="devMediaUrl" style="margin-top:10px; display:block;">Image URL</label>
+            <input id="devMediaUrl" type="text" placeholder="https://images.pexels.com/..." />
+            <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+              <button id="devSimulateBtn">Simulate Inbound MMS</button>
+              <span class="small" id="devStatus"></span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -243,6 +247,30 @@
 
     function computeUnsentCount() {
       return state.campaignContacts.filter(c => !c.firstSentAt).length;
+    }
+
+    function setStepState(id, stepState) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('active', 'locked', 'done');
+      el.classList.add(stepState);
+    }
+
+    function updateStepVisibility() {
+      const campaign = state.campaign;
+      const isLocked = !!campaign?.isLocked;
+      const hasMessage = isLocked
+        ? !!campaign.message
+        : els.message.value.trim().length > 0;
+      const hasContacts = state.campaignContacts.length > 0;
+      const hasSent = (campaign?.sendCount || 0) > 0;
+
+      setStepState('step1Card', isLocked ? 'done' : 'active');
+      setStepState('step2Card', hasMessage ? 'active' : 'locked');
+      setStepState('step3Card', hasContacts ? 'active' : 'locked');
+
+      const sendLogEl = document.getElementById('sendLogSection');
+      if (sendLogEl) sendLogEl.style.display = hasSent ? '' : 'none';
     }
 
     function updateReviewSummary() {
@@ -322,6 +350,7 @@
 
       updateReviewSummary();
       renderDevContactSelect();
+      updateStepVisibility();
     }
 
     async function loadCampaign() {
