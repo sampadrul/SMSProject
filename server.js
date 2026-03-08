@@ -64,6 +64,27 @@ app.post("/api/logout", (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+// Wipe all data (admin only — requireAuth ensures you must be logged in)
+app.post("/api/wipe", requireAuth, (req, res) => {
+  try {
+    // Wrap in a transaction so all tables are cleared together or not at all
+    const wipeAll = db.transaction(() => {
+      db.exec(`
+        DELETE FROM photos;
+        DELETE FROM send_log;
+        DELETE FROM campaign_contacts;
+        DELETE FROM campaigns;
+        DELETE FROM global_contacts;
+        DELETE FROM opt_outs;
+      `);
+    });
+    wipeAll();
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Public files — login page, Twilio webhook, health check, and static assets
 // These are served WITHOUT auth so the login page itself can load
 app.use("/login.html", express.static(path.join(__dirname, "login.html")));

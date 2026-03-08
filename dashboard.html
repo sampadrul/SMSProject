@@ -56,6 +56,7 @@
     <div class="right">
   <a href="contacts.html">Contacts</a>
   <a href="photos.html">Photos</a>
+  <button id="wipeBtn" onclick="confirmWipe()" style="background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);padding:5px 12px;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;margin-left:8px;">Wipe Data</button>
 </div>
 
   </header>
@@ -246,6 +247,18 @@
     }
 
     els.createBtn.onclick = createCampaign;
+
+    async function confirmWipe() {
+      if (!confirm("Are you sure you want to wipe ALL data? This deletes all campaigns, contacts, photos, and send history. This cannot be undone.")) return;
+      try {
+        const res = await fetch("/api/wipe", { method: "POST" });
+        if (!res.ok) throw new Error(await res.text());
+        alert("All data wiped.");
+        await loadCampaigns();
+      } catch (e) {
+        alert("Wipe failed: " + e.message);
+      }
+    }
 
     (async function init() {
       await loadCampaigns();
