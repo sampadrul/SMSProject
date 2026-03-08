@@ -100,5 +100,6 @@ async function uploadBufferToDrive({ buffer, filename, mimeType, folderId }) {
 module.exports = {
   getAuthUrl,
   exchangeCodeForToken,
-  uploadBufferToDrive
+  uploadBufferToDrive,
+  getDriveClient
 };

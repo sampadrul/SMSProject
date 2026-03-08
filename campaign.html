@@ -82,6 +82,7 @@
     <div class="right">
       <a href="contacts.html">Contacts</a>
       <a href="photos.html">Photos</a>
+      <button id="devToggle" class="secondary" style="margin-left:8px; font-size:11px; padding:4px 10px; background:rgba(255,255,255,0.1); color:#bfdbfe; border:1px solid rgba(255,255,255,0.25); box-shadow:none;">Dev Mode</button>
       <span id="campaignMeta" class="small"></span>
     </div>
   </header>
@@ -176,18 +177,20 @@
               <thead><tr><th>When</th><th>Type</th><th>Targets</th><th>Message</th></tr></thead>
               <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
             </table>
-            <hr>
-            <h3>Dev: Simulate Inbound MMS</h3>
-            <p class="subtle">Pretend Twilio sent a photo from one of this campaign’s contacts — useful for testing without curl.</p>
-            <label for="devContact">Contact</label>
-            <select id="devContact"><option value="">Loading contacts…</option></select>
-            <label for="devMediaUrl" style="margin-top:10px; display:block;">Image URL</label>
-            <input id="devMediaUrl" type="text" placeholder="https://images.pexels.com/..." />
-            <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-              <button id="devSimulateBtn">Simulate Inbound MMS</button>
-              <span class="small" id="devStatus"></span>
-            </div>
           </div>
+        </div>
+      </div>
+
+      <div id="devSection" style="display:none; margin-top:20px; padding-top:16px; border-top:1px solid #e0e7ff;">
+        <h3 style="margin:0 0 6px;">Dev: Simulate Inbound MMS</h3>
+        <p class="subtle">Pretend Twilio sent a photo from one of this campaign’s contacts — useful for testing without curl.</p>
+        <label for="devContact">Contact</label>
+        <select id="devContact"><option value="">Loading contacts…</option></select>
+        <label for="devMediaUrl" style="margin-top:10px; display:block;">Image URL</label>
+        <input id="devMediaUrl" type="text" placeholder="https://images.pexels.com/..." />
+        <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+          <button id="devSimulateBtn">Simulate Inbound MMS</button>
+          <span class="small" id="devStatus"></span>
         </div>
       </div>
     </section>
@@ -704,6 +707,15 @@
       }
     });
     els.devSimulateBtn.onclick = simulateInbound;
+
+    document.getElementById("devToggle").onclick = () => {
+      const section = document.getElementById("devSection");
+      const btn = document.getElementById("devToggle");
+      const visible = section.style.display !== "none";
+      section.style.display = visible ? "none" : "";
+      btn.style.background = visible ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.3)";
+      btn.style.color = visible ? "#bfdbfe" : "#fff";
+    };
 
     (async function init(){
       if (!campaignId) return;
