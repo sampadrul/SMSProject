@@ -11,7 +11,9 @@ const {
   getAuthUrl,
   exchangeCodeForToken,
   uploadBufferToDrive,
-  getDriveClient
+  getDriveClient,
+  getRefreshToken,
+  getCredentials
 } = require("./googleDrive");
 const { db, stmts } = require("./db");
 
@@ -174,9 +176,17 @@ app.get("/health", (req, res) => {
 // ---------- Google OAuth ----------
 app.get("/google/auth", (req, res) => {
   try {
+    // Show current connection status
+    const hasRefreshToken = !!getRefreshToken();
+    const statusHtml = hasRefreshToken
+      ? `<p style="color:green;font-weight:bold;">Google Drive is currently connected.</p>
+         <p>Re-authorize below if you need a new refresh token:</p>`
+      : `<p style="color:orange;font-weight:bold;">Google Drive is not yet connected.</p>`;
+
     const url = getAuthUrl();
     res.send(`
       <h2>Google Drive Authorization</h2>
+      ${statusHtml}
       <p>1) Click this link and approve access:</p>
       <p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>
       <p>2) After approving, Google will show you a code. Paste it here:</p>
@@ -184,6 +194,7 @@ app.get("/google/auth", (req, res) => {
         <input name="code" style="width: 600px;" />
         <button type="submit">Submit</button>
       </form>
+      <p><a href="/">Back to app</a></p>
     `);
   } catch (e) {
     res.status(500).send("Error: " + e.message);
@@ -194,8 +205,18 @@ app.post("/google/auth", express.urlencoded({ extended: true }), async (req, res
   try {
     const code = (req.body.code || "").trim();
     if (!code) return res.status(400).send("Missing code.");
-    await exchangeCodeForToken(code);
-    res.send("✅ Authorized! You can close this tab and return to the app.");
+    const tokens = await exchangeCodeForToken(code);
+    // Show the refresh token so the user can copy it into cloud env vars
+    const refreshToken = tokens.refresh_token || "(no refresh token returned — you may already have one)";
+    res.send(`
+      <h2>Authorized!</h2>
+      <p>Google Drive is connected. The token file has been saved locally.</p>
+      <h3>For cloud deployment (Railway):</h3>
+      <p>Copy this refresh token into your <code>GOOGLE_OAUTH_REFRESH_TOKEN</code> env var:</p>
+      <pre style="background:#f0f0f0;padding:12px;border-radius:4px;word-break:break-all;max-width:800px;">${refreshToken}</pre>
+      <p style="color:#666;">You only need to do this once. The refresh token is long-lived.</p>
+      <p><a href="/">Back to app</a></p>
+    `);
   } catch (e) {
     res.status(500).send("Error exchanging code: " + e.message);
   }
