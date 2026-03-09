@@ -47,6 +47,15 @@
     .skeleton { background: linear-gradient(90deg, #e0e7ff 25%, #eef2ff 50%, #e0e7ff 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .skeleton-card { height: 140px; border-radius: 10px; }
+
+    /* Lightbox overlay */
+    .lightbox-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; flex-direction: column; }
+    .lightbox-overlay.active { display: flex; animation: lightboxIn 0.2s ease; }
+    @keyframes lightboxIn { from { opacity: 0; } to { opacity: 1; } }
+    .lightbox-overlay img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+    .lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.15s; padding: 0; box-shadow: none; }
+    .lightbox-close:hover { background: rgba(255,255,255,0.15); }
+    .lightbox-filename { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 8px; text-align: center; }
   </style>
 </head>
 <body>
@@ -84,6 +93,14 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <div class="lightbox-content">
+      <img id="lightboxImg" src="" alt="" />
+      <div class="lightbox-filename" id="lightboxFilename"></div>
+    </div>
+  </div>
+
   <script>
     function showToast(message, type = 'success', duration = 4000) {
       const container = document.getElementById('toastContainer');
@@ -102,6 +119,25 @@
       toast.classList.add('fade-out');
       toast.addEventListener('animationend', () => toast.remove());
     }
+
+    // Lightbox functions
+    function openLightbox(src, alt) {
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightboxImg').alt = alt;
+      document.getElementById('lightboxFilename').textContent = alt;
+      document.getElementById('lightbox').classList.add('active');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+      document.getElementById('lightboxImg').src = '';
+    }
+    document.getElementById('lightboxClose').onclick = closeLightbox;
+    document.getElementById('lightbox').onclick = function(e) {
+      if (e.target === this) closeLightbox();
+    };
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeLightbox();
+    });
 
     const root = document.getElementById("photosRoot");
 
@@ -164,6 +200,8 @@
             const img = document.createElement("img");
             img.src = p.url;
             img.alt = p.filename;
+            img.style.cursor = 'pointer';
+            img.onclick = () => openLightbox(img.src, img.alt);
             card.appendChild(img);
 
             const meta = document.createElement("div");
