@@ -19,8 +19,16 @@ const { db, stmts } = require("./db");
 
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
+
+// Trust Railway's reverse proxy — needed for secure cookies and accurate rate-limit IPs
+app.set("trust proxy", 1);
+
+// Helmet adds security headers (CSP, X-Frame-Options, HSTS, etc.) to every response
+app.use(helmet());
 
 // ---------- Middleware ----------
 app.use(express.urlencoded({ extended: false }));
@@ -34,7 +42,8 @@ app.use(session({
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,  // stay logged in for 7 days
     httpOnly: true,           // JS can't read the cookie (security)
-    secure: false             // set to true when behind HTTPS in production
+    secure: process.env.NODE_ENV === "production",  // HTTPS-only in production
+    sameSite: "Lax"           // blocks cross-site POST requests (CSRF protection)
   }
 }));
 
@@ -46,8 +55,15 @@ function requireAuth(req, res, next) {
   return res.redirect("/login.html");
 }
 
+// Rate limiter for login — prevents brute-force password guessing
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15-minute window
+  max: 5,                     // 5 attempts per IP per window
+  message: { error: "Too many login attempts. Please try again in 15 minutes." },
+});
+
 // Login endpoint — compare submitted password against the stored hash
-app.post("/api/login", async (req, res) => {
+app.post("/api/login", loginLimiter, async (req, res) => {
   const { password } = req.body;
   const hash = process.env.ADMIN_PASSWORD_HASH;
   if (!hash) return res.status(500).json({ error: "No password configured" });
@@ -652,7 +668,13 @@ app.post("/api/dev/simulate-inbound", async (req, res) => {
 });
 
 // ---------- Twilio inbound ----------
-app.post("/twilio/inbound", async (req, res) => {
+// In production, validate that requests actually come from Twilio (signature check).
+// Locally we skip this so simulate-inbound and ngrok testing still work.
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+app.post("/twilio/inbound",
+  ...(NODE_ENV === "production" ? [twilio.webhook({ protocol: "https" })] : []),
+  async (req, res) => {
   console.log("=== TWILIO INBOUND HIT ===", new Date().toISOString());
   console.log("Body:", req.body);
 
