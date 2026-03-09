@@ -68,6 +68,33 @@
     hr { border: none; border-top: 1px solid #e0e7ff; margin: 20px 0; }
     a { color: #2563eb; font-weight: 500; }
     @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+    /* Toast notifications */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; min-width: 280px; max-width: 420px; padding: 12px 16px; border-radius: 10px; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.12); font-size: 13px; font-family: inherit; color: #0f172a; border-left: 4px solid #3b82f6; animation: toastIn 0.3s ease forwards; cursor: pointer; }
+    .toast.success { border-left-color: #22c55e; }
+    .toast.error { border-left-color: #ef4444; }
+    .toast.info { border-left-color: #3b82f6; }
+    .toast.fade-out { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes toastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(40px); } }
+
+    /* Skeleton loading */
+    .skeleton { background: linear-gradient(90deg, #e0e7ff 25%, #eef2ff 50%, #e0e7ff 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-row { height: 16px; margin: 10px 0; }
+    .skeleton-row.wide { width: 90%; }
+    .skeleton-row.medium { width: 60%; }
+    .skeleton-row.short { width: 35%; }
+    .skeleton-bar { height: 22px; width: 200px; }
+    .skeleton-card { height: 120px; border-radius: 10px; }
+
+    /* Step lock messages */
+    .step-lock-msg { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 8px; background: #f8faff; border: 1.5px dashed #c7d7fe; color: #64748b; font-size: 13px; margin-top: 4px; }
+    .step-card.locked { pointer-events: auto; }
+    .step-card.locked .step-body { display: block; }
+    .step-card.locked .step-body > :not(.step-lock-msg) { display: none; }
+    .step-card.locked .step-header-row { opacity: 0.5; }
   </style>
 </head>
 <body>
@@ -76,7 +103,7 @@
       <a href="dashboard.html">&larr; Campaigns</a>
       <div>
         <div class="small">Campaign</div>
-        <h1 id="campaignName">Loading…</h1>
+        <h1 id="campaignName"><span class="skeleton skeleton-bar" style="display:inline-block;">&nbsp;</span></h1>
       </div>
     </div>
     <div class="right">
@@ -120,6 +147,7 @@
           <span id="unsentBadge" class="badge"></span>
         </div>
         <div class="step-body">
+          <div class="step-lock-msg" id="step2Lock">✏️ Write a message above to unlock this step</div>
           <p class="subtle">Add contacts to this campaign. You can keep adding contacts even after the first send — incremental sends target only unsent contacts.</p>
           <div style="margin-bottom:10px;">
             <label for="globalSelect">Add existing contact</label>
@@ -131,7 +159,7 @@
           </div>
           <table>
             <thead><tr><th>Name</th><th>Phone</th><th>First sent</th><th>Last send</th><th></th></tr></thead>
-            <tbody id="contactsTbody"><tr><td colspan="5" class="small">No contacts yet.</td></tr></tbody>
+            <tbody id="contactsTbody"><tr><td colspan="5"><div class="skeleton skeleton-row wide"></div></td></tr><tr><td colspan="5"><div class="skeleton skeleton-row medium"></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -149,6 +177,7 @@
           <span id="sendModeTag" class="pill"></span>
         </div>
         <div class="step-body">
+          <div class="step-lock-msg" id="step3Lock">👥 Add at least one contact to unlock this step</div>
           <p class="subtle" id="sendHelp"></p>
           <div style="margin-bottom:8px;">
             <div class="small">Summary</div>
@@ -202,9 +231,29 @@
     </section>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
+    function showToast(message, type = 'success', duration = 4000) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icons = { success: '✓', error: '✕', info: 'ℹ' };
+      toast.innerHTML = `<span style="font-weight:700;font-size:15px;">${icons[type] || ''}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      toast.onclick = () => dismissToast(toast);
+      if (type !== 'error') {
+        setTimeout(() => dismissToast(toast), duration);
+      }
+    }
+    function dismissToast(toast) {
+      if (toast.classList.contains('fade-out')) return;
+      toast.classList.add('fade-out');
+      toast.addEventListener('animationend', () => toast.remove());
+    }
+
     const campaignId = new URLSearchParams(window.location.search).get("id");
-    if (!campaignId) alert("No campaign id provided in URL (expected ?id=...)");
+    if (!campaignId) showToast("No campaign id provided in URL (expected ?id=...)", "error");
 
     const els = {
       campaignName: document.getElementById("campaignName"),
@@ -259,6 +308,23 @@
       el.classList.add(stepState);
     }
 
+    function updateStepNum(cardId, stepState, label) {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+      const numEl = card.querySelector('.step-num');
+      if (!numEl) return;
+      if (stepState === 'done') {
+        numEl.textContent = '✓';
+        numEl.style.fontSize = '14px';
+      } else if (stepState === 'locked') {
+        numEl.textContent = '🔒';
+        numEl.style.fontSize = '12px';
+      } else {
+        numEl.textContent = label;
+        numEl.style.fontSize = '12px';
+      }
+    }
+
     function updateStepVisibility() {
       const campaign = state.campaign;
       const isLocked = !!campaign?.isLocked;
@@ -271,6 +337,16 @@
       setStepState('step1Card', isLocked ? 'done' : 'active');
       setStepState('step2Card', hasMessage ? 'active' : 'locked');
       setStepState('step3Card', hasContacts ? 'active' : 'locked');
+
+      updateStepNum('step1Card', isLocked ? 'done' : 'active', '1');
+      updateStepNum('step2Card', hasMessage ? 'active' : 'locked', '2');
+      updateStepNum('step3Card', hasContacts ? 'active' : 'locked', '3');
+
+      // Toggle lock message visibility
+      const step2Lock = document.getElementById('step2Lock');
+      const step3Lock = document.getElementById('step3Lock');
+      if (step2Lock) step2Lock.style.display = hasMessage ? 'none' : 'flex';
+      if (step3Lock) step3Lock.style.display = hasContacts ? 'none' : 'flex';
 
       const sendLogEl = document.getElementById('sendLogSection');
       if (sendLogEl) sendLogEl.style.display = hasSent ? '' : 'none';
@@ -446,8 +522,13 @@
       els.contactsTbody.querySelectorAll("button[data-mid]").forEach(btn => {
         btn.onclick = async () => {
           if (!confirm("Remove this contact from the campaign?")) return;
-          await fetchJSON(`/api/contacts/${encodeURIComponent(btn.dataset.mid)}`, { method: "DELETE" });
-          await refreshAll();
+          try {
+            await fetchJSON(`/api/contacts/${encodeURIComponent(btn.dataset.mid)}`, { method: "DELETE" });
+            showToast("Contact removed from campaign.", "info");
+            await refreshAll();
+          } catch (e) {
+            showToast("Failed to remove contact: " + e.message, "error");
+          }
         };
       });
     }
@@ -488,15 +569,24 @@
 
     async function addToCampaign() {
       const contactId = els.globalSelect.value;
-      if (!contactId) return alert("Select a contact first.");
+      if (!contactId) {
+        showToast("Select a contact first.", "error");
+        return;
+      }
 
-      await fetchJSON("/api/contacts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ campaignId, contactId })
-      });
+      try {
+        await fetchJSON("/api/contacts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ campaignId, contactId })
+        });
 
-      await refreshAll();
+        const contact = state.globalContacts.find(c => c.id === contactId);
+        showToast(`Added ${contact?.name || 'contact'} to campaign!`, "success");
+        await refreshAll();
+      } catch (e) {
+        showToast("Failed to add contact: " + e.message, "error");
+      }
     }
 
     async function loadSendLog() {
@@ -599,29 +689,25 @@
       if (!isLocked) {
         const draft = els.message.value.trim();
         if (!draft) {
-          els.sendStatus.textContent = "Please enter a message for this campaign.";
-          els.sendStatus.className = "status err";
+          showToast("Please enter a message for this campaign.", "error");
           return;
         }
         msgToUse = draft;
       } else {
         msgToUse = state.campaign.message || "";
         if (!msgToUse) {
-          els.sendStatus.textContent = "Campaign has no stored message; cannot send.";
-          els.sendStatus.className = "status err";
+          showToast("Campaign has no stored message; cannot send.", "error");
           return;
         }
       }
 
       const unsent = computeUnsentCount();
       if (isLocked && unsent === 0) {
-        els.sendStatus.textContent = "No new (unsent) contacts to send to.";
-        els.sendStatus.className = "status err";
+        showToast("No new (unsent) contacts to send to.", "error");
         return;
       }
       if (!isLocked && state.campaignContacts.length === 0) {
-        els.sendStatus.textContent = "Add at least one contact before sending.";
-        els.sendStatus.className = "status err";
+        showToast("Add at least one contact before sending.", "error");
         return;
       }
 
@@ -636,14 +722,13 @@
           body: JSON.stringify({ campaignId, message: msgToUse })
         });
 
-        els.sendStatus.textContent =
-          `Recorded ${res.sendType} send at ${fmt(res.sentAt)} for ${res.updatedCount} contact(s).`;
-        els.sendStatus.className = "status ok";
+        els.sendStatus.textContent = "";
+        showToast(`Sent to ${res.updatedCount} contact(s)!`, "success");
 
         await refreshAll();
       } catch (e) {
-        els.sendStatus.textContent = "Error: " + e.message;
-        els.sendStatus.className = "status err";
+        els.sendStatus.textContent = "";
+        showToast("Send failed: " + e.message, "error");
       }
     }
 
