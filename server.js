@@ -27,8 +27,20 @@ const app = express();
 // Trust Railway's reverse proxy — needed for secure cookies and accurate rate-limit IPs
 app.set("trust proxy", 1);
 
-// Helmet adds security headers (CSP, X-Frame-Options, HSTS, etc.) to every response
-app.use(helmet());
+// Helmet adds security headers (CSP, X-Frame-Options, HSTS, etc.) to every response.
+// We relax the Content-Security-Policy to allow inline scripts/styles and Google Fonts
+// because all our HTML pages use inline <script> and <style> tags.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:"],
+    }
+  }
+}));
 
 // ---------- Middleware ----------
 app.use(express.urlencoded({ extended: false }));
