@@ -5,32 +5,58 @@
   <title>Contact Details</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; margin:0; background:#f5f5f7; color:#111827; }
-    header { background:#111827; color:#fff; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; }
-    header .left { display:flex; align-items:center; gap:12px; }
-    header a { color:#e5e7eb; text-decoration:none; font-size:14px; padding:4px 8px; border-radius:4px; border:1px solid #4b5563; }
-    header a:hover { background:#374151; }
-    header h1 { margin:0; font-size:18px; font-weight:700; }
-    main { max-width:1100px; margin:20px auto 40px; padding:0 16px; display:grid; grid-template-columns:1.1fr 1fr; gap:20px; }
-    section { background:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
-    h2 { margin:0 0 8px; font-size:17px; }
-    p.subtle { margin:0 0 12px; font-size:13px; color:#6b7280; }
-    .small { font-size:11px; color:#6b7280; }
-    table { width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
-    th, td { padding:6px 4px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:middle; }
-    th { font-size:12px; color:#6b7280; }
-    .badge { display:inline-flex; padding:2px 8px; border-radius:999px; font-size:11px; background:#f3f4f6; color:#4b5563; border:1px solid #e5e7eb; }
-    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:10px; }
-    .photo-card { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; }
-    .photo-card img { width:100%; height:90px; object-fit:cover; display:block; }
-    .photo-meta { padding:4px 6px 6px; font-size:11px; }
-    .photo-meta-top { display:flex; justify-content:space-between; gap:4px; }
-    .reuse { margin-top:4px; padding:2px 6px; border-radius:999px; border:1px solid #f59e0b; background:#fffbeb; color:#92400e; display:inline-block; }
-    .link { color:#2563eb; text-decoration:none; font-size:11px; }
-    .link:hover { text-decoration:underline; }
-    @media (max-width: 900px){
-      main { grid-template-columns:1fr; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
+    header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
+    header .left { display: flex; align-items: center; gap: 14px; }
+    header a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); }
+    header a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+    header .small { color: #bfdbfe; }
+    main { max-width: 1100px; margin: 24px auto 48px; padding: 0 20px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+    section { background: #fff; border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(37,99,235,0.06), 0 4px 16px rgba(37,99,235,0.05); border: 1px solid #e0e7ff; }
+    h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; }
+    p.subtle { margin: 0 0 12px; font-size: 13px; color: #64748b; line-height: 1.5; }
+    .small { font-size: 11px; color: #64748b; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+    thead tr { background: #f8faff; }
+    th { font-size: 11px; color: #6366f1; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; border-bottom: 2px solid #e0e7ff; text-align: left; vertical-align: middle; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f0f4ff; text-align: left; vertical-align: middle; }
+    tbody tr:hover td { background: #f8faff; }
+    tbody tr:last-child td { border-bottom: none; }
+    .badge { display: inline-flex; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #dbeafe; color: #1d4ed8; border: none; }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
+    .photo-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; }
+    .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
+    .photo-card img { width: 100%; height: 90px; object-fit: cover; display: block; }
+    .photo-meta { padding: 5px 7px 7px; font-size: 11px; }
+    .photo-meta-top { display: flex; justify-content: space-between; gap: 4px; }
+    .reuse { margin-top: 4px; padding: 2px 6px; border-radius: 6px; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; display: inline-block; }
+    .link { color: #2563eb; text-decoration: none; font-size: 11px; font-weight: 500; }
+    .link:hover { text-decoration: underline; }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
     }
+
+    /* Toast notifications */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; min-width: 280px; max-width: 420px; padding: 12px 16px; border-radius: 10px; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.12); font-size: 13px; font-family: inherit; color: #0f172a; border-left: 4px solid #3b82f6; animation: toastIn 0.3s ease forwards; cursor: pointer; }
+    .toast.success { border-left-color: #22c55e; }
+    .toast.error { border-left-color: #ef4444; }
+    .toast.info { border-left-color: #3b82f6; }
+    .toast.fade-out { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes toastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(40px); } }
+
+    /* Skeleton loading */
+    .skeleton { background: linear-gradient(90deg, #e0e7ff 25%, #eef2ff 50%, #e0e7ff 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-row { height: 16px; margin: 10px 0; }
+    .skeleton-row.wide { width: 90%; }
+    .skeleton-row.medium { width: 60%; }
+    .skeleton-row.short { width: 35%; }
+    .skeleton-card { height: 120px; border-radius: 10px; }
   </style>
 </head>
 <body>
@@ -43,7 +69,7 @@
         <div class="small" id="contactPhone"></div>
       </div>
     </div>
-    <div class="right">
+    <div class="right" style="display:flex;gap:8px;">
       <a href="dashboard.html">Campaigns</a>
       <a href="photos.html">Photos</a>
     </div>
@@ -66,7 +92,8 @@
           </tr>
         </thead>
         <tbody id="campaignsTbody">
-          <tr><td colspan="5" class="small">Loading…</td></tr>
+          <tr><td colspan="5"><div class="skeleton skeleton-row wide"></div></td></tr>
+          <tr><td colspan="5"><div class="skeleton skeleton-row medium"></div></td></tr>
         </tbody>
       </table>
     </section>
@@ -76,11 +103,37 @@
       <p class="subtle">
         All photos this contact has sent, across all campaigns.
       </p>
-      <div id="photosContainer" class="small">Loading…</div>
+      <div id="photosContainer">
+        <div class="photo-grid">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+      </div>
     </section>
   </main>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script>
+    function showToast(message, type = 'success', duration = 4000) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const icons = { success: '✓', error: '✕', info: 'ℹ' };
+      toast.innerHTML = `<span style="font-weight:700;font-size:15px;">${icons[type] || ''}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      toast.onclick = () => dismissToast(toast);
+      if (type !== 'error') {
+        setTimeout(() => dismissToast(toast), duration);
+      }
+    }
+    function dismissToast(toast) {
+      if (toast.classList.contains('fade-out')) return;
+      toast.classList.add('fade-out');
+      toast.addEventListener('animationend', () => toast.remove());
+    }
+
     const params = new URLSearchParams(window.location.search);
     const contactId = params.get("id");
 
@@ -207,8 +260,9 @@
         }
 
       } catch (e) {
-        els.campaignsTbody.innerHTML = `<tr><td colspan="5" class="small">Error: ${e.message}</td></tr>`;
-        els.photosContainer.textContent = "Error loading photos.";
+        els.campaignsTbody.innerHTML = `<tr><td colspan="5" class="small">Failed to load data.</td></tr>`;
+        els.photosContainer.innerHTML = `<div class="small">Failed to load photos.</div>`;
+        showToast("Error loading contact details: " + e.message, "error");
       }
     }
 
