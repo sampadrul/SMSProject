@@ -236,7 +236,14 @@ app.get("/health", async (req, res) => {
       health.status = "degraded";
     } else {
       try {
-        await getDriveClient().files.list({ pageSize: 1 });
+        // Race the Drive API call against a 3-second timeout so the health
+        // check always responds quickly — Railway kills containers that
+        // don't answer health checks within ~5 seconds.
+        const driveCheck = getDriveClient().files.list({ pageSize: 1 });
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Drive API timed out (3s)")), 3000)
+        );
+        await Promise.race([driveCheck, timeout]);
         health.drive.operational = true;
       } catch (e) {
         health.drive.error = `Drive API unreachable: ${e.message}`;
