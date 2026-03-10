@@ -218,8 +218,34 @@ app.get("/", (req, res) => {
 });
 
 // ---------- Health ----------
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+app.get("/health", async (req, res) => {
+  const health = {
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    drive: { configured: false, authorized: false, operational: false, error: null }
+  };
+
+  health.drive.configured = !!process.env.GOOGLE_DRIVE_FOLDER_ID;
+  if (!health.drive.configured) {
+    health.drive.error = "GOOGLE_DRIVE_FOLDER_ID env var is not set";
+    health.status = "degraded";
+  } else {
+    health.drive.authorized = !!getRefreshToken();
+    if (!health.drive.authorized) {
+      health.drive.error = "No Google OAuth refresh token found — visit /google/auth to connect";
+      health.status = "degraded";
+    } else {
+      try {
+        await getDriveClient().files.list({ pageSize: 1 });
+        health.drive.operational = true;
+      } catch (e) {
+        health.drive.error = `Drive API unreachable: ${e.message}`;
+        health.status = "degraded";
+      }
+    }
+  }
+
+  res.json(health);
 });
 
 // ---------- Google OAuth ----------
@@ -610,6 +636,84 @@ app.get("/api/photos", (req, res) => {
   res.json({ data });
 });
 
+// ---------- Drive upload diagnostics ----------
+// Returns photos that were saved to the DB but never uploaded to Google Drive.
+// On Railway (where local files don't persist), these photos are effectively broken.
+app.get("/api/photos/broken", requireAuth, (req, res) => {
+  try {
+    const driveConfigured = !!process.env.GOOGLE_DRIVE_FOLDER_ID;
+    const photos = stmts.getPhotosWithoutDrive.all();
+
+    res.json({
+      driveConfigured,
+      count: photos.length,
+      photos: photos.map(p => ({
+        id: p.id,
+        filename: p.filename,
+        phoneNumber: p.phoneNumber,
+        campaignId: p.campaignId,
+        contactId: p.contactId,
+        createdAt: p.createdAt,
+        hasLocalFile: fs.existsSync(
+          path.join(DOWNLOADS_DIR, (p.phoneNumber || "unknown").replace(/[^\d+]/g, ""), p.filename)
+        )
+      }))
+    });
+  } catch (err) {
+    console.error("Error fetching broken photos:", err.message);
+    res.status(500).json({ error: "Failed to fetch broken photos" });
+  }
+});
+
+// Re-attempts uploading a photo to Google Drive from the local downloads/ fallback.
+app.post("/api/photos/:id/retry-upload", requireAuth, async (req, res) => {
+  try {
+    const photo = stmts.getPhotoById.get(req.params.id);
+    if (!photo) return res.status(404).json({ error: "Photo not found" });
+
+    if (photo.driveFileId) {
+      return res.json({ status: "already_uploaded", driveFileId: photo.driveFileId });
+    }
+
+    const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+    if (!driveFolderId) {
+      return res.status(400).json({ error: "GOOGLE_DRIVE_FOLDER_ID not configured" });
+    }
+
+    // Read the local file
+    const safePhone = (photo.phoneNumber || "unknown").replace(/[^\d+]/g, "");
+    const filePath = path.join(DOWNLOADS_DIR, safePhone, photo.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        error: "Local file not found — cannot retry upload",
+        hint: "The file may have been lost during a Railway deploy. The original photo is unrecoverable."
+      });
+    }
+
+    const buffer = fs.readFileSync(filePath);
+    const ext = path.extname(photo.filename).toLowerCase();
+    const mimeMap = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp" };
+    const mimeType = mimeMap[ext] || "application/octet-stream";
+
+    const uploadResult = await uploadBufferToDrive({
+      buffer, filename: photo.filename, mimeType, folderId: driveFolderId
+    });
+
+    stmts.updatePhotoDriveInfo.run(uploadResult.id, uploadResult.webViewLink || null, photo.id);
+
+    console.log(`[DRIVE RETRY OK] Re-uploaded ${photo.filename} as ${uploadResult.id}`);
+    res.json({
+      status: "uploaded",
+      driveFileId: uploadResult.id,
+      driveWebViewLink: uploadResult.webViewLink || null
+    });
+  } catch (err) {
+    console.error(`[DRIVE RETRY FAILED] Photo ${req.params.id}: ${err.message}`);
+    res.status(500).json({ error: "Upload failed", details: err.message });
+  }
+});
+
 // ---------- Contact details ----------
 app.get("/api/contact-details/:id", (req, res) => {
   const { id } = req.params;
@@ -783,13 +887,34 @@ app.post("/twilio/inbound",
 
       const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
       if (driveFolderId) {
-        try {
-          const uploadResult = await uploadBufferToDrive({ buffer, filename, mimeType: contentType, folderId: driveFolderId });
-          driveFileId = uploadResult.id;
-          driveWebViewLink = uploadResult.webViewLink || null;
-          console.log("Uploaded to Google Drive:", driveFileId);
-        } catch (e) {
-          console.warn("Failed to upload to Google Drive:", e.message || e);
+        const MAX_RETRIES = 2;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const uploadResult = await uploadBufferToDrive({ buffer, filename, mimeType: contentType, folderId: driveFolderId });
+            driveFileId = uploadResult.id;
+            driveWebViewLink = uploadResult.webViewLink || null;
+            console.log("Uploaded to Google Drive:", driveFileId);
+            break; // success — exit retry loop
+          } catch (e) {
+            const isLastAttempt = attempt === MAX_RETRIES;
+            if (isLastAttempt) {
+              console.error(
+                `[DRIVE UPLOAD FAILED] All ${MAX_RETRIES + 1} attempts exhausted.\n` +
+                `  Photo: ${filename}\n` +
+                `  From: ${from}\n` +
+                `  Campaign: ${campaignId || "none"}\n` +
+                `  Error: ${e.message || e}\n` +
+                `  Code: ${e.code || "unknown"}\n` +
+                `  Status: ${e.status || e.response?.status || "unknown"}`
+              );
+            } else {
+              const delayMs = 1000 * Math.pow(2, attempt); // 1s, 2s
+              console.warn(
+                `[DRIVE UPLOAD RETRY] Attempt ${attempt + 1}/${MAX_RETRIES + 1} failed for ${filename}: ${e.message || e}. Retrying in ${delayMs}ms...`
+              );
+              await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+          }
         }
       }
 

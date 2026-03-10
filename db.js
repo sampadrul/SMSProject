@@ -134,6 +134,9 @@ const stmts = {
   getPhotosByHash: db.prepare("SELECT * FROM photos WHERE contentHash = ?"),
   insertPhoto: db.prepare("INSERT INTO photos (id, phoneNumber, filename, createdAt, campaignId, contactId, assignedFromLastOutboundAt, contentHash, similarInOtherCampaigns, driveFileId, driveWebViewLink) VALUES (@id, @phoneNumber, @filename, @createdAt, @campaignId, @contactId, @assignedFromLastOutboundAt, @contentHash, @similarInOtherCampaigns, @driveFileId, @driveWebViewLink)"),
   updatePhotoSimilar: db.prepare("UPDATE photos SET similarInOtherCampaigns = ? WHERE id = ?"),
+  updatePhotoDriveInfo: db.prepare("UPDATE photos SET driveFileId = ?, driveWebViewLink = ? WHERE id = ?"),
+  getPhotosWithoutDrive: db.prepare("SELECT * FROM photos WHERE driveFileId IS NULL ORDER BY createdAt DESC"),
+  getPhotoById: db.prepare("SELECT * FROM photos WHERE id = ?"),
   countPhotosByCampaign: db.prepare("SELECT COUNT(*) as count FROM photos WHERE campaignId = ?"),
 
   // Send log
