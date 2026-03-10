@@ -218,41 +218,39 @@ app.get("/", (req, res) => {
 });
 
 // ---------- Health ----------
-app.get("/health", async (req, res) => {
-  const health = {
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    drive: { configured: false, authorized: false, operational: false, error: null }
-  };
+// Keep /health simple and synchronous — Railway pings this to decide if the
+// container is alive. If it hangs or throws, Railway kills the container.
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
-  health.drive.configured = !!process.env.GOOGLE_DRIVE_FOLDER_ID;
-  if (!health.drive.configured) {
-    health.drive.error = "GOOGLE_DRIVE_FOLDER_ID env var is not set";
-    health.status = "degraded";
-  } else {
-    health.drive.authorized = !!getRefreshToken();
-    if (!health.drive.authorized) {
-      health.drive.error = "No Google OAuth refresh token found — visit /google/auth to connect";
-      health.status = "degraded";
+// Detailed Drive diagnostics on a separate, authenticated endpoint.
+// Hit this manually to check if Google Drive is working.
+app.get("/api/drive-status", requireAuth, async (req, res) => {
+  const drive = { configured: false, authorized: false, operational: false, error: null };
+
+  try {
+    drive.configured = !!process.env.GOOGLE_DRIVE_FOLDER_ID;
+    if (!drive.configured) {
+      drive.error = "GOOGLE_DRIVE_FOLDER_ID env var is not set";
     } else {
-      try {
-        // Race the Drive API call against a 3-second timeout so the health
-        // check always responds quickly — Railway kills containers that
-        // don't answer health checks within ~5 seconds.
+      drive.authorized = !!getRefreshToken();
+      if (!drive.authorized) {
+        drive.error = "No Google OAuth refresh token found — visit /google/auth to connect";
+      } else {
         const driveCheck = getDriveClient().files.list({ pageSize: 1 });
         const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Drive API timed out (3s)")), 3000)
+          setTimeout(() => reject(new Error("Drive API timed out (5s)")), 5000)
         );
         await Promise.race([driveCheck, timeout]);
-        health.drive.operational = true;
-      } catch (e) {
-        health.drive.error = `Drive API unreachable: ${e.message}`;
-        health.status = "degraded";
+        drive.operational = true;
       }
     }
+  } catch (e) {
+    drive.error = `Drive API unreachable: ${e.message}`;
   }
 
-  res.json(health);
+  res.json(drive);
 });
 
 // ---------- Google OAuth ----------
