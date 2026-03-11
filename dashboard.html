@@ -84,7 +84,7 @@
         <a href="contacts.html">Contacts</a>
         <a href="photos.html">Photos</a>
       </div>
-      <button id="wipeBtn" onclick="confirmWipe()" style="display:none;background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);padding:5px 12px;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;">Wipe Data</button>
+      <button id="wipeBtn" style="display:none;background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);padding:5px 12px;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;">Wipe Data</button>
     </div>
 
   </header>
@@ -298,17 +298,18 @@
 
     els.createBtn.onclick = createCampaign;
 
-    async function confirmWipe() {
+    function confirmWipe() {
       if (!confirm("Are you sure you want to wipe ALL data? This deletes all campaigns, contacts, photos, and send history. This cannot be undone.")) return;
-      try {
-        const res = await fetch("/api/wipe", { method: "POST" });
-        if (!res.ok) throw new Error(await res.text());
-        showToast("All data wiped.", "info");
-        await loadCampaigns();
-      } catch (e) {
-        showToast("Wipe failed: " + e.message, "error");
-      }
+      fetch("/api/wipe", { method: "POST" })
+        .then(res => {
+          if (!res.ok) return res.text().then(t => { throw new Error(t); });
+          window.location.reload();
+        })
+        .catch(e => {
+          showToast("Wipe failed: " + e.message, "error");
+        });
     }
+    document.getElementById('wipeBtn').onclick = confirmWipe;
 
     (async function init() {
       await loadCampaigns();
