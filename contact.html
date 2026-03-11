@@ -42,6 +42,22 @@
     @media (max-width: 900px) {
       main { grid-template-columns: 1fr; }
     }
+    @media (max-width: 600px) {
+      header { flex-wrap: wrap; padding: 12px 16px; gap: 8px; }
+      header .left { gap: 10px; }
+      header h1 { font-size: 15px; }
+      header .small { font-size: 10px; }
+      main { padding: 0 12px; margin-top: 16px; margin-bottom: 32px; gap: 14px; }
+      section { padding: 16px 14px; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 4px; }
+      /* Hide: Added, First sent (cols 2,3) */
+      th:nth-child(2), td:nth-child(2),
+      th:nth-child(3), td:nth-child(3) { display: none; }
+      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+      .toast { min-width: auto; max-width: calc(100vw - 32px); }
+      .toast-container { right: 12px; left: 12px; }
+    }
 
     /* Toast notifications */
     .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
