@@ -10,10 +10,13 @@
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
     header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
     header .left { display: flex; align-items: center; gap: 14px; }
-    header a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); }
-    header a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    header .left > a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); }
+    header .left > a:hover { background: rgba(255,255,255,0.2); color: #fff; }
     header h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
-    header .right a { margin-left: 8px; }
+    header .nav-links { display: flex; gap: 4px; align-items: center; }
+    header .nav-links a { color: #bfdbfe; text-decoration: none; font-size: 13px; font-weight: 500; padding: 5px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1); }
+    header .nav-links a:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    header .nav-links a.active { background: rgba(255,255,255,0.25); color: #fff; border-color: rgba(255,255,255,0.4); }
     header .small { color: #bfdbfe; }
     main { max-width: 1100px; margin: 24px auto; padding: 0 20px 48px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
     section { background: #fff; border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(37,99,235,0.06), 0 4px 16px rgba(37,99,235,0.05); border: 1px solid #e0e7ff; }
@@ -104,6 +107,11 @@
     .lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.15s; padding: 0; box-shadow: none; }
     .lightbox-close:hover { background: rgba(255,255,255,0.15); }
     .lightbox-filename { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 8px; text-align: center; }
+
+    /* Dev Mode FAB */
+    .dev-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9998; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; }
+    .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
+    .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
   </style>
 </head>
 <body>
@@ -113,13 +121,13 @@
       <div>
         <div class="small">Campaign</div>
         <h1 id="campaignName"><span class="skeleton skeleton-bar" style="display:inline-block;">&nbsp;</span></h1>
+        <div class="small" id="campaignMeta"></div>
       </div>
     </div>
-    <div class="right">
+    <div class="nav-links">
+      <a href="dashboard.html" class="active">Campaigns</a>
       <a href="contacts.html">Contacts</a>
       <a href="photos.html">Photos</a>
-      <button id="devToggle" class="secondary" style="margin-left:8px; font-size:11px; padding:4px 10px; background:rgba(255,255,255,0.1); color:#bfdbfe; border:1px solid rgba(255,255,255,0.25); box-shadow:none;">Dev Mode</button>
-      <span id="campaignMeta" class="small"></span>
     </div>
   </header>
 
@@ -242,6 +250,8 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
+  <button id="devFab" class="dev-fab" title="Toggle Dev Mode">&#9881;</button>
+
   <div class="lightbox-overlay" id="lightbox">
     <button class="lightbox-close" id="lightboxClose">&times;</button>
     <div class="lightbox-content">
@@ -325,6 +335,13 @@
       const res = await fetch(url, options);
       if (!res.ok) throw new Error(await res.text());
       return res.json();
+    }
+
+    function fmtPhone(raw) {
+      const digits = String(raw || "").replace(/\D/g, "");
+      const d = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+      if (d.length === 10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+      return raw;
     }
 
     function fmt(ts) {
@@ -525,7 +542,7 @@
       for (const c of available) {
         const opt = document.createElement("option");
         opt.value = c.id;
-        opt.textContent = `${c.name} (${c.phoneNumber})`;
+        opt.textContent = `${c.name} (${fmtPhone(c.phoneNumber)})`;
         els.globalSelect.appendChild(opt);
       }
     }
@@ -547,7 +564,7 @@
               ${c.name}
             </a>
           </td>
-          <td>${c.phoneNumber}</td>
+          <td>${fmtPhone(c.phoneNumber)}</td>
           <td class="small">${fmt(c.firstSentAt)}</td>
           <td class="small">${fmt(c.lastOutboundAt)}</td>
           <td><button class="secondary" data-mid="${c.id}">Remove</button></td>
@@ -598,7 +615,7 @@
       for (const c of state.campaignContacts) {
         const opt = document.createElement("option");
         opt.value = c.id;
-        opt.textContent = `${c.name} (${c.phoneNumber})`;
+        opt.textContent = `${c.name} (${fmtPhone(c.phoneNumber)})`;
         sel.appendChild(opt);
       }
     }
@@ -665,8 +682,8 @@
         block.innerHTML = `
           <div style="display:flex; align-items:center; justify-content:space-between;">
             <div>
-              <strong>${sender.name || sender.phoneNumber}</strong><br>
-              <span class="small">${sender.phoneNumber}</span>
+              <strong>${sender.name || fmtPhone(sender.phoneNumber)}</strong><br>
+              <span class="small">${fmtPhone(sender.phoneNumber)}</span>
             </div>
             <span class="badge">${sender.photos.length} photo(s)</span>
           </div>
@@ -831,19 +848,25 @@
     });
     els.devSimulateBtn.onclick = simulateInbound;
 
-    document.getElementById("devToggle").onclick = () => {
-      const section = document.getElementById("devSection");
-      const btn = document.getElementById("devToggle");
-      const visible = section.style.display !== "none";
-      section.style.display = visible ? "none" : "";
-      btn.style.background = visible ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.3)";
-      btn.style.color = visible ? "#bfdbfe" : "#fff";
-    };
-
     (async function init(){
       if (!campaignId) return;
       await refreshAll();
     })();
+
+    // --- Dev Mode FAB ---
+    function applyDevMode() {
+      const isOn = localStorage.getItem('devMode') === 'true';
+      document.getElementById('devSection').style.display = isOn ? '' : 'none';
+      document.getElementById('devFab').classList.toggle('active', isOn);
+    }
+
+    document.getElementById('devFab').onclick = function() {
+      const isOn = localStorage.getItem('devMode') === 'true';
+      localStorage.setItem('devMode', isOn ? 'false' : 'true');
+      applyDevMode();
+    };
+
+    applyDevMode();
   </script>
 </body>
 </html>
