@@ -48,10 +48,10 @@
     .okBadge { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
     .status { min-height: 18px; margin-top: 8px; font-size: 13px; }
     .ok { color: #059669; } .err { color: #dc2626; } .neutral { color: #64748b; }
-    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-top: 10px; }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 10px; }
     .photo-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; }
     .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
-    .photo-card img { width: 100%; height: 90px; object-fit: cover; display: block; }
+    .photo-card img { width: 100%; height: 140px; object-fit: cover; display: block; }
     .photo-meta { padding: 4px 6px 6px; font-size: 11px; }
     .small-text { font-size: 11px; color: #64748b; }
     .step-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6366f1; }
@@ -156,7 +156,10 @@
           <p class="subtle">Set the message for this campaign. On the first send it will be locked and reused for all future incremental sends.</p>
           <label for="message">Message text</label>
           <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
-          <div class="small" id="messageHint" style="margin-top:4px;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
+            <div class="small" id="messageHint"></div>
+            <div class="small" id="charCount"></div>
+          </div>
         </div>
       </div>
 
@@ -423,6 +426,21 @@
       if (sendLogEl) sendLogEl.style.display = hasSent ? '' : 'none';
     }
 
+    function updateCharCount() {
+      const len = els.message.value.length;
+      const el = document.getElementById('charCount');
+      const segments = len <= 160 ? 1 : Math.ceil(len / 153);
+      if (len === 0) {
+        el.textContent = '';
+      } else if (len <= 160) {
+        el.textContent = `${len} / 160`;
+        el.style.color = len > 140 ? '#f59e0b' : '#64748b';
+      } else {
+        el.textContent = `${len} chars · ${segments} messages`;
+        el.style.color = '#ef4444';
+      }
+    }
+
     function updateReviewSummary() {
       if (!state.campaign) {
         els.reviewSummary.textContent = "";
@@ -499,6 +517,7 @@
       }
 
       updateReviewSummary();
+      updateCharCount();
       renderDevContactSelect();
       updateStepVisibility();
     }
