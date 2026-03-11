@@ -213,7 +213,7 @@
       els.campaignsTbody.innerHTML = "";
 
       if (allCampaigns.length === 0) {
-        els.campaignsTbody.innerHTML = `<tr><td colspan="7" class="small">No campaigns yet.</td></tr>`;
+        els.campaignsTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">📋</div><div style="font-weight:600;margin-bottom:4px;">No campaigns yet</div><div class="small">Create your first campaign above to start collecting photos via SMS.</div></td></tr>`;
         return;
       }
 
@@ -297,6 +297,7 @@
     }
 
     els.createBtn.onclick = createCampaign;
+    els.nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') createCampaign(); });
 
     function confirmWipe() {
       if (!confirm("Are you sure you want to wipe ALL data? This deletes all campaigns, contacts, photos, and send history. This cannot be undone.")) return;

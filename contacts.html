@@ -194,7 +194,7 @@
       tbody.innerHTML = "";
 
       if (contacts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="small">No contacts yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">👤</div><div style="font-weight:600;margin-bottom:4px;">No contacts yet</div><div class="small">Add your first contact above — you\'ll be able to assign them to campaigns.</div></td></tr>';
         return;
       }
 
@@ -263,6 +263,11 @@
         showToast("Error saving contact: " + e.message, "error");
       }
     };
+
+    function handleEnter(e) { if (e.key === 'Enter') addBtn.click(); }
+    firstNameEl.addEventListener('keydown', handleEnter);
+    lastNameEl.addEventListener('keydown', handleEnter);
+    phoneEl.addEventListener('keydown', handleEnter);
 
     load();
 

@@ -173,7 +173,7 @@
         const items = data.data || [];
 
         if (!items.length) {
-          root.textContent = "No photos yet.";
+          root.innerHTML = '<div style="text-align:center;padding:48px 20px;"><div style="font-size:36px;margin-bottom:8px;">📸</div><div style="font-weight:600;font-size:15px;margin-bottom:6px;">No photos yet</div><div class="small">Once you send a campaign, photos from your contacts will appear here.</div><a href="dashboard.html" style="display:inline-block;margin-top:12px;font-size:13px;">Go to Campaigns →</a></div>';
           return;
         }
 

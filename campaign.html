@@ -99,6 +99,15 @@
     .step-card.locked .step-body > :not(.step-lock-msg) { display: none; }
     .step-card.locked .step-header-row { opacity: 0.5; }
 
+    /* Progress bar */
+    .progress-wrap { margin-bottom: 14px; }
+    .progress-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .progress-label .prog-text { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .progress-label .prog-pct { font-size: 12px; font-weight: 700; color: #2563eb; }
+    .progress-track { height: 10px; background: #e0e7ff; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #3b82f6, #2563eb); transition: width 0.5s ease; min-width: 0; }
+    .progress-fill.complete { background: linear-gradient(90deg, #22c55e, #16a34a); }
+
     /* Lightbox overlay */
     .lightbox-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; flex-direction: column; }
     .lightbox-overlay.active { display: flex; animation: lightboxIn 0.2s ease; }
@@ -244,7 +253,16 @@
     <section>
       <h2>Photos by Sender</h2>
       <p class="subtle">Photos received for contacts in this campaign.</p>
-      <div id="photosContainer" class="small">No photos yet.</div>
+      <div id="progressBar" class="progress-wrap" style="display:none;">
+        <div class="progress-label">
+          <span class="prog-text" id="progText"></span>
+          <span class="prog-pct" id="progPct"></span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div id="photosContainer"><div style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">📸</div><div class="small">No photos received yet. They'll appear here as contacts reply.</div></div></div>
     </section>
   </main>
 
@@ -518,7 +536,7 @@
       els.globalSelect.innerHTML = "";
 
       if (state.globalContacts.length === 0) {
-        els.globalSelect.innerHTML = `<option value="">No contacts yet. Create some on Contacts.</option>`;
+        els.globalSelect.innerHTML = `<option value="">No contacts yet — create some on the Contacts page</option>`;
         els.globalSelect.disabled = true;
         els.addBtn.disabled = true;
         return;
@@ -552,7 +570,7 @@
       els.contactsTbody.innerHTML = "";
 
       if (rows.length === 0) {
-        els.contactsTbody.innerHTML = `<tr><td colspan="5" class="small">No contacts yet.</td></tr>`;
+        els.contactsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px 8px;"><div style="font-size:24px;margin-bottom:4px;">👥</div><div class="small">No contacts assigned — use the dropdown above to add people to this campaign.</div></td></tr>`;
         return;
       }
 
@@ -648,7 +666,7 @@
 
       els.sendLogTbody.innerHTML = "";
       if (events.length === 0) {
-        els.sendLogTbody.innerHTML = `<tr><td colspan="4" class="small">No sends yet.</td></tr>`;
+        els.sendLogTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px 8px;"><div style="font-size:24px;margin-bottom:4px;">📤</div><div class="small">No sends recorded yet.</div></td></tr>`;
         return;
       }
 
@@ -664,12 +682,27 @@
       }
     }
 
+    function updateProgressBar(respondedCount) {
+      const total = state.campaignContacts.length;
+      const bar = document.getElementById('progressBar');
+      if (total === 0) { bar.style.display = 'none'; return; }
+      bar.style.display = '';
+      const pct = Math.round((respondedCount / total) * 100);
+      document.getElementById('progText').textContent = `${respondedCount} of ${total} contacts responded`;
+      document.getElementById('progPct').textContent = `${pct}%`;
+      const fill = document.getElementById('progFill');
+      fill.style.width = pct + '%';
+      fill.classList.toggle('complete', pct === 100);
+    }
+
     async function loadPhotos() {
       const data = await fetchJSON(`/api/photos?campaignId=${encodeURIComponent(campaignId)}`);
       const items = data.data || [];
 
+      updateProgressBar(items.length);
+
       if (items.length === 0) {
-        els.photosContainer.innerHTML = `<div class="small">No photos yet.</div>`;
+        els.photosContainer.innerHTML = `<div style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">📸</div><div class="small">No photos received yet. They'll appear here as contacts reply.</div></div>`;
         return;
       }
 
@@ -847,6 +880,7 @@
       }
     });
     els.devSimulateBtn.onclick = simulateInbound;
+    els.devMediaUrl.addEventListener('keydown', e => { if (e.key === 'Enter') simulateInbound(); });
 
     (async function init(){
       if (!campaignId) return;
