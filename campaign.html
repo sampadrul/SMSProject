@@ -108,6 +108,14 @@
     .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #3b82f6, #2563eb); transition: width 0.5s ease; min-width: 0; }
     .progress-fill.complete { background: linear-gradient(90deg, #22c55e, #16a34a); }
 
+    /* Confetti */
+    .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9997; overflow: hidden; }
+    .confetti-piece { position: absolute; width: 8px; height: 8px; border-radius: 2px; animation: confettiFall 2.5s ease-out forwards; }
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg) scale(0.3); opacity: 0; }
+    }
+
     /* Lightbox overlay */
     .lightbox-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; flex-direction: column; }
     .lightbox-overlay.active { display: flex; animation: lightboxIn 0.2s ease; }
@@ -701,6 +709,27 @@
       }
     }
 
+    let confettiFired = false;
+
+    function launchConfetti() {
+      if (document.querySelector('.confetti-container')) return;
+      const container = document.createElement('div');
+      container.className = 'confetti-container';
+      const colors = ['#2563eb', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+      for (let i = 0; i < 60; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.top = -10 + Math.random() * -20 + 'px';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 0.8 + 's';
+        piece.style.animationDuration = (1.8 + Math.random() * 1.2) + 's';
+        container.appendChild(piece);
+      }
+      document.body.appendChild(container);
+      setTimeout(() => container.remove(), 4000);
+    }
+
     function updateProgressBar(respondedCount) {
       const total = state.campaignContacts.length;
       const bar = document.getElementById('progressBar');
@@ -708,10 +737,14 @@
       bar.style.display = '';
       const pct = Math.round((respondedCount / total) * 100);
       document.getElementById('progText').textContent = `${respondedCount} of ${total} contacts responded`;
-      document.getElementById('progPct').textContent = `${pct}%`;
+      document.getElementById('progPct').textContent = pct === 100 ? 'Complete!' : `${pct}%`;
       const fill = document.getElementById('progFill');
       fill.style.width = pct + '%';
       fill.classList.toggle('complete', pct === 100);
+      if (pct === 100 && !confettiFired) {
+        confettiFired = true;
+        setTimeout(launchConfetti, 600);
+      }
     }
 
     async function loadPhotos() {
