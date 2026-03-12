@@ -11,6 +11,7 @@ const {
   getAuthUrl,
   exchangeCodeForToken,
   uploadBufferToDrive,
+  createDriveFolder,
   getDriveClient,
   getRefreshToken,
   getCredentials
@@ -345,7 +346,7 @@ app.get("/api/campaigns", (req, res) => {
   res.json({ campaigns });
 });
 
-app.post("/api/campaigns", (req, res) => {
+app.post("/api/campaigns", async (req, res) => {
   const { name } = req.body || {};
   if (!name || !name.trim()) return res.status(400).json({ error: "Name is required" });
 
@@ -359,8 +360,22 @@ app.post("/api/campaigns", (req, res) => {
     sendCount: 0,
     isLocked: 0,
     lockedAt: null,
-    message: ""
+    message: "",
+    driveFolderId: null
   };
+
+  // Try to create a dedicated subfolder in Google Drive for this campaign
+  const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  if (parentFolderId) {
+    try {
+      const folder = await createDriveFolder({ folderName: campaign.name, parentFolderId });
+      campaign.driveFolderId = folder.id;
+      console.log(`[DRIVE] Created subfolder "${folder.name}" (${folder.id})`);
+    } catch (e) {
+      console.warn(`[DRIVE] Could not create subfolder for campaign "${campaign.name}": ${e.message}`);
+    }
+  }
+
   stmts.insertCampaign.run(campaign);
   res.json({ campaign: { ...campaignToApi(campaign), contactCount: 0, responseCount: 0 } });
 });
@@ -680,7 +695,12 @@ app.post("/api/photos/:id/retry-upload", requireAuth, async (req, res) => {
       return res.json({ status: "already_uploaded", driveFileId: photo.driveFileId });
     }
 
-    const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+    // Use the campaign's dedicated subfolder if it has one, otherwise fall back to the global folder
+    let driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+    if (photo.campaignId) {
+      const camp = stmts.getCampaignById.get(photo.campaignId);
+      if (camp && camp.driveFolderId) driveFolderId = camp.driveFolderId;
+    }
     if (!driveFolderId) {
       return res.status(400).json({ error: "GOOGLE_DRIVE_FOLDER_ID not configured" });
     }
@@ -890,7 +910,12 @@ app.post("/twilio/inbound",
       let driveFileId = null;
       let driveWebViewLink = null;
 
-      const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
+      // Use the campaign's dedicated subfolder if it has one, otherwise fall back to the global folder
+      let driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || "";
+      if (campaignId) {
+        const camp = stmts.getCampaignById.get(campaignId);
+        if (camp && camp.driveFolderId) driveFolderId = camp.driveFolderId;
+      }
       if (driveFolderId) {
         const MAX_RETRIES = 2;
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

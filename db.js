@@ -98,6 +98,18 @@ db.exec(`
   );
 `);
 
+// ---------- Migrations ----------
+// SQLite doesn't support IF NOT EXISTS for columns, so we try the ALTER
+// and catch the error if the column already exists. This is safe to run
+// on every server start — the first time it adds the column, after that
+// the error is silently ignored.
+try {
+  db.exec("ALTER TABLE campaigns ADD COLUMN driveFolderId TEXT");
+  console.log("Migration: added driveFolderId column to campaigns");
+} catch (e) {
+  // "duplicate column name" means it already exists — that's fine
+}
+
 // ---------- Prepared statements ----------
 // Preparing statements ahead of time makes them faster and safer (auto-escapes values)
 
@@ -113,8 +125,8 @@ const stmts = {
   // Campaigns
   getAllCampaigns: db.prepare("SELECT * FROM campaigns ORDER BY createdAt DESC"),
   getCampaignById: db.prepare("SELECT * FROM campaigns WHERE id = ?"),
-  insertCampaign: db.prepare("INSERT INTO campaigns (id, name, createdAt, updatedAt, lastUpdated, sendCount, isLocked, lockedAt, message) VALUES (@id, @name, @createdAt, @updatedAt, @lastUpdated, @sendCount, @isLocked, @lockedAt, @message)"),
-  updateCampaign: db.prepare("UPDATE campaigns SET name=@name, updatedAt=@updatedAt, lastUpdated=@lastUpdated, sendCount=@sendCount, isLocked=@isLocked, lockedAt=@lockedAt, message=@message WHERE id=@id"),
+  insertCampaign: db.prepare("INSERT INTO campaigns (id, name, createdAt, updatedAt, lastUpdated, sendCount, isLocked, lockedAt, message, driveFolderId) VALUES (@id, @name, @createdAt, @updatedAt, @lastUpdated, @sendCount, @isLocked, @lockedAt, @message, @driveFolderId)"),
+  updateCampaign: db.prepare("UPDATE campaigns SET name=@name, updatedAt=@updatedAt, lastUpdated=@lastUpdated, sendCount=@sendCount, isLocked=@isLocked, lockedAt=@lockedAt, message=@message, driveFolderId=@driveFolderId WHERE id=@id"),
 
   // Campaign contacts (memberships)
   getMembershipsByCampaign: db.prepare("SELECT * FROM campaign_contacts WHERE campaignId = ?"),
@@ -194,7 +206,8 @@ function migrateFromJson() {
         ...c,
         isLocked: c.isLocked ? 1 : 0,
         lockedAt: c.lockedAt || null,
-        message: c.message || ""
+        message: c.message || "",
+        driveFolderId: c.driveFolderId || null
       });
     }
   });

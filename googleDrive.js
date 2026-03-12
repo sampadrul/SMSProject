@@ -141,10 +141,26 @@ async function uploadBufferToDrive({ buffer, filename, mimeType, folderId }) {
   return createRes.data;
 }
 
+async function createDriveFolder({ folderName, parentFolderId }) {
+  const drive = getDriveClient();
+
+  const res = await drive.files.create({
+    requestBody: {
+      name: folderName,
+      mimeType: "application/vnd.google-apps.folder",
+      parents: [parentFolderId]
+    },
+    fields: "id, name, webViewLink"
+  });
+
+  return res.data;
+}
+
 module.exports = {
   getAuthUrl,
   exchangeCodeForToken,
   uploadBufferToDrive,
+  createDriveFolder,
   getDriveClient,
   getRefreshToken,
   getCredentials
