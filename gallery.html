@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Photo Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
+    header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 18px 28px; text-align: center; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
+    header .label { font-size: 12px; font-weight: 500; color: #bfdbfe; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    main { max-width: 1000px; margin: 28px auto; padding: 0 20px 48px; }
+    .photo-count { text-align: center; font-size: 13px; color: #64748b; margin-bottom: 20px; }
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .photo-card { background: #fff; border: 1.5px solid #e0e7ff; border-radius: 12px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; cursor: pointer; }
+    .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
+    .photo-card img { width: 100%; height: 200px; object-fit: cover; display: block; }
+    .photo-meta { padding: 6px 10px 8px; font-size: 11px; color: #64748b; }
+    .empty { text-align: center; padding: 60px 20px; }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; }
+    .empty-text { font-size: 15px; color: #64748b; }
+    .error { text-align: center; padding: 60px 20px; color: #dc2626; }
+
+    /* Lightbox */
+    .lightbox-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; flex-direction: column; }
+    .lightbox-overlay.active { display: flex; animation: lightboxIn 0.2s ease; }
+    @keyframes lightboxIn { from { opacity: 0; } to { opacity: 1; } }
+    .lightbox-overlay img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
+    .lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.15s; padding: 0; box-shadow: none; }
+    .lightbox-close:hover { background: rgba(255,255,255,0.15); }
+
+    /* Loading skeleton */
+    .skeleton { background: linear-gradient(90deg, #e0e7ff 25%, #eef2ff 50%, #e0e7ff 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-card { height: 200px; border-radius: 12px; }
+    .skeleton-bar { height: 24px; width: 260px; margin: 0 auto 20px; }
+
+    @media (max-width: 600px) {
+      header { padding: 14px 16px; }
+      header h1 { font-size: 18px; }
+      main { padding: 0 12px 32px; margin-top: 16px; }
+      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+      .photo-card img { height: 150px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="label">Photo Gallery</div>
+    <h1 id="galleryName"><span class="skeleton skeleton-bar" style="display:inline-block;">&nbsp;</span></h1>
+  </header>
+
+  <main>
+    <div id="content">
+      <div class="photo-count skeleton skeleton-bar">&nbsp;</div>
+      <div class="photo-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <img id="lightboxImg" src="" alt="" />
+  </div>
+
+  <script>
+    const token = new URLSearchParams(window.location.search).get("token");
+
+    function openLightbox(src) {
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightbox').classList.add('active');
+    }
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+      document.getElementById('lightboxImg').src = '';
+    }
+    document.getElementById('lightboxClose').onclick = closeLightbox;
+    document.getElementById('lightbox').onclick = function(e) {
+      if (e.target === this) closeLightbox();
+    };
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeLightbox();
+    });
+
+    async function loadGallery() {
+      if (!token) {
+        document.getElementById('galleryName').textContent = 'Gallery';
+        document.getElementById('content').innerHTML = '<div class="error">No gallery token provided.</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/gallery/${encodeURIComponent(token)}`);
+        if (!res.ok) {
+          document.getElementById('galleryName').textContent = 'Gallery';
+          document.getElementById('content').innerHTML = '<div class="error">Gallery not found. The link may be invalid or expired.</div>';
+          return;
+        }
+
+        const data = await res.json();
+        document.title = `${data.name} — Photo Gallery`;
+        document.getElementById('galleryName').textContent = data.name;
+
+        if (!data.photos || data.photos.length === 0) {
+          document.getElementById('content').innerHTML =
+            '<div class="empty"><div class="empty-icon">📸</div><div class="empty-text">No photos yet. Check back soon!</div></div>';
+          return;
+        }
+
+        // Sort newest first
+        data.photos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        let html = `<div class="photo-count">${data.photos.length} photo${data.photos.length === 1 ? '' : 's'}</div>`;
+        html += '<div class="photo-grid">';
+        for (const p of data.photos) {
+          const date = new Date(p.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+          html += `
+            <div class="photo-card" onclick="openLightbox('${p.url}')">
+              <img src="${p.url}" alt="${p.filename}" loading="lazy" />
+              <div class="photo-meta">${date}</div>
+            </div>`;
+        }
+        html += '</div>';
+        document.getElementById('content').innerHTML = html;
+
+      } catch (err) {
+        document.getElementById('galleryName').textContent = 'Gallery';
+        document.getElementById('content').innerHTML = '<div class="error">Something went wrong loading this gallery.</div>';
+      }
+    }
+
+    loadGallery();
+  </script>
+</body>
+</html>

@@ -58,6 +58,8 @@
       th:nth-child(6), td:nth-child(6) { display: none; }
       .toast { min-width: auto; max-width: calc(100vw - 32px); }
       .toast-container { right: 12px; left: 12px; }
+      /* Closed campaigns table: hide Closed date column (col 2) */
+      #closedSection th:nth-child(2), #closedSection td:nth-child(2) { display: none; }
     }
 
     /* Toast notifications */
@@ -115,10 +117,7 @@
 
     <section style="margin-top:20px;">
       <h2>Existing Campaigns</h2>
-      <p class="subtle">
-        Each row shows how many times a campaign has been sent.
-        The send count includes the initial lock-and-send plus any incremental sends to new contacts.
-      </p>
+      <p class="subtle">Your active campaigns.</p>
       <table>
         <thead>
           <tr>
@@ -136,6 +135,23 @@
           <tr><td colspan="7"><div class="skeleton skeleton-row medium"></div></td></tr>
           <tr><td colspan="7"><div class="skeleton skeleton-row short"></div></td></tr>
         </tbody>
+      </table>
+    </section>
+
+    <section id="closedSection" style="display:none; margin-top:20px;">
+      <h2>Closed Campaigns</h2>
+      <p class="subtle">Campaigns that are done collecting photos.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Closed</th>
+            <th>Contacts</th>
+            <th>Photos</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="closedTbody"></tbody>
       </table>
     </section>
   </main>
@@ -222,34 +238,68 @@
     }
 
     function renderCampaigns() {
+      const activeCampaigns = allCampaigns.filter(c => !c.isClosed);
+      const closedCampaigns = allCampaigns.filter(c => c.isClosed);
+
+      // Render active campaigns
       els.campaignsTbody.innerHTML = "";
 
-      if (allCampaigns.length === 0) {
-        els.campaignsTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">📋</div><div style="font-weight:600;margin-bottom:4px;">No campaigns yet</div><div class="small">Create your first campaign above to start collecting photos via SMS.</div></td></tr>`;
-        return;
+      if (activeCampaigns.length === 0) {
+        els.campaignsTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">📋</div><div style="font-weight:600;margin-bottom:4px;">No active campaigns</div><div class="small">Create your first campaign above to start collecting photos via SMS.</div></td></tr>`;
+      } else {
+        const sorted = sortCampaigns(activeCampaigns);
+
+        for (const c of sorted) {
+          const tr = document.createElement("tr");
+          const sendCount = typeof c.sendCount === "number" ? c.sendCount : 0;
+
+          tr.innerHTML = `
+            <td><div>${c.name}</div></td>
+            <td class="small">${fmt(c.createdAt)}</td>
+            <td><span class="badge">${sendCount}</span></td>
+            <td>${c.contactCount ?? 0}</td>
+            <td>${c.responseCount ?? 0}</td>
+            <td class="small">${fmt(c.lastUpdated)}</td>
+            <td class="row-actions">
+              <button class="secondary" data-id="${c.id}">Open</button>
+            </td>
+          `;
+          els.campaignsTbody.appendChild(tr);
+        }
       }
 
-      const sorted = sortCampaigns(allCampaigns);
+      // Render closed campaigns
+      const closedSection = document.getElementById("closedSection");
+      const closedTbody = document.getElementById("closedTbody");
+      closedTbody.innerHTML = "";
 
-      for (const c of sorted) {
-        const tr = document.createElement("tr");
-        const sendCount = typeof c.sendCount === "number" ? c.sendCount : 0;
+      if (closedCampaigns.length === 0) {
+        closedSection.style.display = "none";
+      } else {
+        closedSection.style.display = "";
+        const sorted = [...closedCampaigns].sort((a, b) => {
+          const at = a.closedAt ? new Date(a.closedAt).getTime() : 0;
+          const bt = b.closedAt ? new Date(b.closedAt).getTime() : 0;
+          return bt - at;
+        });
 
-        tr.innerHTML = `
-          <td><div>${c.name}</div></td>
-          <td class="small">${fmt(c.createdAt)}</td>
-          <td><span class="badge">${sendCount}</span></td>
-          <td>${c.contactCount ?? 0}</td>
-          <td>${c.responseCount ?? 0}</td>
-          <td class="small">${fmt(c.lastUpdated)}</td>
-          <td class="row-actions">
-            <button class="secondary" data-id="${c.id}">Open</button>
-          </td>
-        `;
-        els.campaignsTbody.appendChild(tr);
+        for (const c of sorted) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><div>${c.name}</div></td>
+            <td class="small">${fmt(c.closedAt)}</td>
+            <td>${c.contactCount ?? 0}</td>
+            <td>${c.responseCount ?? 0}</td>
+            <td class="row-actions">
+              <button class="secondary" data-id="${c.id}">View</button>
+            </td>
+          `;
+          closedTbody.appendChild(tr);
+        }
       }
 
-      els.campaignsTbody.querySelectorAll("button[data-id]").forEach(btn => {
+      // Wire up all Open/View buttons
+      document.querySelectorAll("button[data-id]").forEach(btn => {
         btn.onclick = () => {
           window.location.href = `campaign.html?id=${encodeURIComponent(btn.getAttribute("data-id"))}`;
         };

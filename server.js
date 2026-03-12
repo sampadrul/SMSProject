@@ -120,6 +120,58 @@ app.use("/login.html", express.static(path.join(__dirname, "login.html")));
 app.use("/optin.html", express.static(path.join(__dirname, "optin.html")));
 app.use("/privacy.html", express.static(path.join(__dirname, "privacy.html")));
 app.use("/terms.html", express.static(path.join(__dirname, "terms.html")));
+app.use("/gallery.html", express.static(path.join(__dirname, "gallery.html")));
+
+// Public gallery API — returns campaign name + photos for anyone with the share token
+app.get("/api/gallery/:token", (req, res) => {
+  const campaign = stmts.getCampaignByShareToken.get(req.params.token);
+  if (!campaign) return res.status(404).json({ error: "Gallery not found" });
+
+  const photos = stmts.getPhotosByCampaign.all(campaign.id);
+  res.json({
+    name: campaign.name,
+    photos: photos.map(p => ({
+      id: p.id,
+      filename: p.filename,
+      createdAt: p.createdAt,
+      url: `/api/gallery/photo/${p.id}`
+    }))
+  });
+});
+
+// Public photo serving — streams a photo without requiring login.
+// Photos are identified by globally-unique IDs that aren't guessable.
+app.get("/api/gallery/photo/:id", async (req, res) => {
+  try {
+    const photo = stmts.getPhotoById.get(req.params.id);
+    if (!photo) return res.status(404).send("Photo not found");
+
+    if (photo.driveFileId) {
+      try {
+        const drive = getDriveClient();
+        const driveRes = await drive.files.get(
+          { fileId: photo.driveFileId, alt: "media" },
+          { responseType: "stream" }
+        );
+        res.set("Content-Type", driveRes.headers["content-type"] || "image/jpeg");
+        res.set("Cache-Control", "public, max-age=86400");
+        driveRes.data.pipe(res);
+        return;
+      } catch (driveErr) {
+        console.warn("Gallery: Drive fetch failed, falling back to local:", driveErr.message);
+      }
+    }
+
+    const safePhone = (photo.phoneNumber || "unknown").replace(/[^\d+]/g, "");
+    const filePath = path.join(DOWNLOADS_DIR, safePhone, photo.filename);
+    if (fs.existsSync(filePath)) return res.sendFile(filePath);
+
+    res.status(404).send("Photo not found");
+  } catch (err) {
+    console.error("Error serving gallery photo:", err.message);
+    res.status(500).send("Error");
+  }
+});
 
 // Everything else requires login
 app.use((req, res, next) => {
@@ -174,7 +226,7 @@ async function computeImageHash(buffer) {
 // Helper: convert SQLite campaign row (isLocked is 0/1) to API format (true/false)
 function campaignToApi(row) {
   if (!row) return null;
-  return { ...row, isLocked: !!row.isLocked };
+  return { ...row, isLocked: !!row.isLocked, isClosed: !!row.isClosed };
 }
 
 // ---------- Twilio ----------
@@ -361,7 +413,10 @@ app.post("/api/campaigns", async (req, res) => {
     isLocked: 0,
     lockedAt: null,
     message: "",
-    driveFolderId: null
+    driveFolderId: null,
+    shareToken: crypto.randomBytes(16).toString("hex"),
+    isClosed: 0,
+    closedAt: null
   };
 
   // Try to create a dedicated subfolder in Google Drive for this campaign
@@ -469,6 +524,7 @@ app.post("/api/send-campaign", async (req, res) => {
 
   const camp = stmts.getCampaignById.get(campaignId);
   if (!camp) return res.status(404).json({ error: "Campaign not found" });
+  if (camp.isClosed) return res.status(400).json({ error: "Campaign is closed" });
 
   const now = new Date().toISOString();
   const isInitial = !camp.isLocked;
@@ -564,6 +620,85 @@ app.post("/api/send-campaign", async (req, res) => {
     updatedCount: acceptedCount, sentAt: now, message: effectiveMessage,
     twilioAcceptedCount: acceptedCount, twilioFailedCount: failedCount, results
   });
+});
+
+// ---------- Close campaign ----------
+app.post("/api/campaigns/:id/close", async (req, res) => {
+  const camp = stmts.getCampaignById.get(req.params.id);
+  if (!camp) return res.status(404).json({ error: "Campaign not found" });
+  if (camp.isClosed) return res.status(400).json({ error: "Campaign is already closed" });
+
+  const now = new Date().toISOString();
+  camp.isClosed = 1;
+  camp.closedAt = now;
+  // Closing implies locking — can't close a draft campaign without also locking it
+  if (!camp.isLocked) {
+    camp.isLocked = 1;
+    camp.lockedAt = now;
+  }
+  camp.updatedAt = now;
+  camp.lastUpdated = now;
+  stmts.updateCampaign.run(camp);
+
+  const contactCount = stmts.countMembershipsByCampaign.get(camp.id).count;
+  const responseCount = stmts.countPhotosByCampaign.get(camp.id).count;
+  res.json({ campaign: { ...campaignToApi(camp), contactCount, responseCount } });
+});
+
+// ---------- Send gallery link ----------
+app.post("/api/campaigns/:id/send-gallery-link", async (req, res) => {
+  const camp = stmts.getCampaignById.get(req.params.id);
+  if (!camp) return res.status(404).json({ error: "Campaign not found" });
+  if (!camp.isClosed) return res.status(400).json({ error: "Campaign must be closed before sending gallery link" });
+
+  const { message } = req.body || {};
+  const trimmed = (message || "").trim();
+  if (!trimmed) return res.status(400).json({ error: "Message is required" });
+
+  const allMemberships = stmts.getMembershipsByCampaign.all(req.params.id);
+  const results = [];
+  let acceptedCount = 0;
+  let failedCount = 0;
+
+  for (const membership of allMemberships) {
+    const contact = stmts.getContactById.get(membership.contactId);
+    if (!contact || !contact.phoneNumber) {
+      failedCount++;
+      results.push({ membershipId: membership.id, contactId: membership.contactId, phoneNumber: null, ok: false, error: "Missing contact or phone number" });
+      continue;
+    }
+
+    const normalized = normalizePhone(contact.phoneNumber);
+    if (stmts.isOptedOut.get(normalized)) {
+      failedCount++;
+      results.push({ membershipId: membership.id, contactId: membership.contactId, phoneNumber: contact.phoneNumber, ok: false, error: "Contact is opted out" });
+      continue;
+    }
+
+    try {
+      const twilioResult = await sendSmsViaTwilio({ to: contact.phoneNumber, body: trimmed });
+      acceptedCount++;
+      results.push({ membershipId: membership.id, contactId: membership.contactId, phoneNumber: contact.phoneNumber, ok: true, twilioSid: twilioResult.sid, twilioStatus: twilioResult.status });
+    } catch (err) {
+      failedCount++;
+      results.push({ membershipId: membership.id, contactId: membership.contactId, phoneNumber: contact.phoneNumber, ok: false, error: err.message || "Twilio send failed" });
+    }
+  }
+
+  const now = new Date().toISOString();
+  stmts.insertSendLog.run({
+    id: makeId("send"),
+    campaignId: req.params.id,
+    type: "gallery-link",
+    sentAt: now,
+    targetCount: allMemberships.length,
+    acceptedCount,
+    failedCount,
+    message: trimmed,
+    results: JSON.stringify(results)
+  });
+
+  res.json({ ok: true, sentAt: now, targetCount: allMemberships.length, acceptedCount, failedCount, results });
 });
 
 // ---------- Photo URL helper ----------

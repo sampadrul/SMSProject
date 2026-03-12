@@ -158,10 +158,29 @@
     .lightbox-close:hover { background: rgba(255,255,255,0.15); }
     .lightbox-filename { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 8px; text-align: center; }
 
+    /* Share link bar */
+    .share-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 8px 12px; background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 8px; }
+    .share-bar input { flex: 1; font-size: 12px; font-family: inherit; color: #475569; border: 1px solid #c7d7fe; border-radius: 6px; padding: 5px 8px; background: #fff; }
+    .share-bar input:focus { outline: none; border-color: #3b82f6; }
+    .share-bar button { white-space: nowrap; font-size: 12px; padding: 5px 12px; }
+    .share-bar .share-label { font-size: 11px; font-weight: 600; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+
     /* Dev Mode FAB */
     .dev-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9998; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; }
     .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
     .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
+
+    /* Closed campaign state */
+    .closed-banner { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #ecfdf5); border: 1.5px solid #6ee7b7; color: #065f46; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .closed-banner .closed-icon { font-size: 20px; }
+    .closed-banner .closed-date { font-weight: 400; font-size: 12px; color: #047857; margin-left: auto; }
+    .campaign-closed-overlay .step-card { opacity: 0.45; pointer-events: none; }
+    .campaign-closed-overlay .step-connector { opacity: 0.45; }
+    .gallery-send-section { padding: 18px 20px; border-radius: 10px; background: #f8faff; border: 1.5px solid #e0e7ff; margin-top: 16px; }
+    .gallery-send-section h3 { margin: 0 0 6px; font-size: 14px; }
+    .gallery-send-section textarea { min-height: 60px; }
+    button.close-campaign { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 1px 3px rgba(220,38,38,0.3); margin-top: 16px; }
+    button.close-campaign:hover:not(:disabled) { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
   </style>
 </head>
 <body>
@@ -183,6 +202,13 @@
 
   <main>
     <section>
+      <div id="closedBanner" class="closed-banner" style="display:none;">
+        <span class="closed-icon">✓</span>
+        <span>This campaign is closed</span>
+        <span class="closed-date" id="closedDate"></span>
+      </div>
+
+      <div id="stepsWrapper">
       <!-- Step 1: Message -->
       <div class="step-card" id="step1Card">
         <div class="step-header-row">
@@ -191,10 +217,9 @@
             <div class="step-label">Step 1</div>
             <h2>Message</h2>
           </div>
-          <span id="lockBadge" class="lock"></span>
         </div>
         <div class="step-body">
-          <p class="subtle">Set the message for this campaign. On the first send it will be locked and reused for all future incremental sends.</p>
+          <p class="subtle">Write the text message everyone will receive.</p>
           <label for="message">Message text</label>
           <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
@@ -206,25 +231,24 @@
 
       <div class="step-connector"></div>
 
-      <!-- Step 2: Assign contacts -->
+      <!-- Step 2: Contacts -->
       <div class="step-card locked" id="step2Card">
         <div class="step-header-row">
           <div class="step-num">2</div>
           <div class="step-title-wrap">
             <div class="step-label">Step 2</div>
-            <h2>Assign Contacts</h2>
+            <h2>Contacts</h2>
           </div>
-          <span id="unsentBadge" class="badge"></span>
         </div>
         <div class="step-body">
-          <div class="step-lock-msg" id="step2Lock">✏️ Write a message above to unlock this step</div>
-          <p class="subtle">Add contacts to this campaign. You can keep adding contacts even after the first send — incremental sends target only unsent contacts.</p>
+          <div class="step-lock-msg" id="step2Lock">Write a message first</div>
+          <p class="subtle">Choose who receives this message.</p>
           <div style="margin-bottom:10px;">
             <label for="globalSelect">Add existing contact</label>
             <select id="globalSelect"><option value="">Loading contacts…</option></select>
             <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
               <button id="addToCampaignBtn">Add to campaign</button>
-              <span class="small">Need someone new? Create them on <a href="contacts.html">Contacts</a>.</span>
+              <span class="small">New person? Add them on the <a href="contacts.html">Contacts</a> page.</span>
             </div>
           </div>
           <table>
@@ -236,18 +260,17 @@
 
       <div class="step-connector"></div>
 
-      <!-- Step 3: Review & send -->
+      <!-- Step 3: Send -->
       <div class="step-card locked" id="step3Card">
         <div class="step-header-row">
           <div class="step-num">3</div>
           <div class="step-title-wrap">
             <div class="step-label">Step 3</div>
-            <h2>Review &amp; Send</h2>
+            <h2>Send</h2>
           </div>
-          <span id="sendModeTag" class="pill"></span>
         </div>
         <div class="step-body">
-          <div class="step-lock-msg" id="step3Lock">👥 Add at least one contact to unlock this step</div>
+          <div class="step-lock-msg" id="step3Lock">Add a contact first</div>
           <p class="subtle" id="sendHelp"></p>
           <div style="margin-bottom:8px;">
             <div class="small">Summary</div>
@@ -271,7 +294,7 @@
             </div>
           </div>
           <div class="step-body">
-            <p class="subtle">Every send is recorded here (initial + incremental).</p>
+            <p class="subtle">Record of every send.</p>
             <table>
               <thead><tr><th>When</th><th>Type</th><th>Targets</th><th>Message</th></tr></thead>
               <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
@@ -282,7 +305,7 @@
 
       <div id="devSection" style="display:none; margin-top:20px; padding-top:16px; border-top:1px solid #e0e7ff;">
         <h3 style="margin:0 0 6px;">Dev: Simulate Inbound MMS</h3>
-        <p class="subtle">Pretend Twilio sent a photo from one of this campaign’s contacts — useful for testing without curl.</p>
+        <p class="subtle">Pretend Twilio sent a photo from one of this campaign's contacts — useful for testing without curl.</p>
         <label for="devContact">Contact</label>
         <select id="devContact"><option value="">Loading contacts…</option></select>
         <label for="devMediaUrl" style="margin-top:10px; display:block;">Image URL</label>
@@ -292,11 +315,34 @@
           <span class="small" id="devStatus"></span>
         </div>
       </div>
+      </div><!-- end #stepsWrapper -->
+
+      <div id="closeCampaignSection" style="display:none;">
+        <hr />
+        <button class="close-campaign" id="closeCampaignBtn">Close Campaign</button>
+        <p class="subtle" style="margin-top:6px;">Closing prevents further sends. You can still receive photos and send the gallery link.</p>
+      </div>
+
+      <div id="gallerySendSection" class="gallery-send-section" style="display:none;">
+        <h3>Send Gallery Link</h3>
+        <p class="subtle">Send everyone a link to view the photos. This sends to all campaign contacts.</p>
+        <label for="galleryMessage">Message</label>
+        <textarea id="galleryMessage"></textarea>
+        <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
+          <button id="sendGalleryBtn">Send Gallery Link</button>
+          <span class="small" id="galleryStatus"></span>
+        </div>
+      </div>
     </section>
 
     <section>
       <h2>Photos by Sender</h2>
       <p class="subtle">Photos received for contacts in this campaign.</p>
+      <div id="shareBar" class="share-bar" style="display:none;">
+        <span class="share-label">Gallery Link</span>
+        <input type="text" id="shareUrl" readonly />
+        <button class="secondary" id="copyShareBtn">Copy</button>
+      </div>
       <div id="progressBar" class="progress-wrap" style="display:none;">
         <div class="progress-label">
           <span class="prog-text" id="progText"></span>
@@ -366,8 +412,6 @@
     const els = {
       campaignName: document.getElementById("campaignName"),
       campaignMeta: document.getElementById("campaignMeta"),
-      lockBadge: document.getElementById("lockBadge"),
-      unsentBadge: document.getElementById("unsentBadge"),
 
       message: document.getElementById("message"),
       messageHint: document.getElementById("messageHint"),
@@ -379,7 +423,6 @@
       sendBtn: document.getElementById("sendBtn"),
       sendStatus: document.getElementById("sendStatus"),
       sendHelp: document.getElementById("sendHelp"),
-      sendModeTag: document.getElementById("sendModeTag"),
       reviewSummary: document.getElementById("reviewSummary"),
 
       sendLogTbody: document.getElementById("sendLogTbody"),
@@ -388,7 +431,17 @@
       devContact: document.getElementById("devContact"),
       devMediaUrl: document.getElementById("devMediaUrl"),
       devSimulateBtn: document.getElementById("devSimulateBtn"),
-      devStatus: document.getElementById("devStatus")
+      devStatus: document.getElementById("devStatus"),
+
+      closedBanner: document.getElementById("closedBanner"),
+      closedDate: document.getElementById("closedDate"),
+      stepsWrapper: document.getElementById("stepsWrapper"),
+      closeCampaignSection: document.getElementById("closeCampaignSection"),
+      closeCampaignBtn: document.getElementById("closeCampaignBtn"),
+      gallerySendSection: document.getElementById("gallerySendSection"),
+      galleryMessage: document.getElementById("galleryMessage"),
+      sendGalleryBtn: document.getElementById("sendGalleryBtn"),
+      galleryStatus: document.getElementById("galleryStatus")
     };
 
     const state = { globalContacts: [], campaignContacts: [], campaign: null };
@@ -442,12 +495,40 @@
 
     function updateStepVisibility() {
       const campaign = state.campaign;
+      const isClosed = !!campaign?.isClosed;
       const isLocked = !!campaign?.isLocked;
       const hasMessage = isLocked
         ? !!campaign.message
         : els.message.value.trim().length > 0;
       const hasContacts = state.campaignContacts.length > 0;
       const hasSent = (campaign?.sendCount || 0) > 0;
+
+      // Closed state: show banner, dim steps, show gallery send, hide close button
+      if (isClosed) {
+        els.closedBanner.style.display = '';
+        els.closedDate.textContent = campaign.closedAt ? `Closed ${fmt(campaign.closedAt)}` : '';
+        els.stepsWrapper.classList.add('campaign-closed-overlay');
+        els.closeCampaignSection.style.display = 'none';
+        els.gallerySendSection.style.display = '';
+        // Pre-fill gallery message with campaign name and link
+        if (!els.galleryMessage.value) {
+          const galleryUrl = campaign.shareToken
+            ? `${window.location.origin}/gallery.html?token=${campaign.shareToken}`
+            : '(no gallery link)';
+          els.galleryMessage.value = `Here are the photos from ${campaign.name}! ${galleryUrl}`;
+        }
+        const sendLogEl = document.getElementById('sendLogSection');
+        if (sendLogEl) sendLogEl.style.display = hasSent ? '' : 'none';
+        return;
+      }
+
+      // Not closed — hide closed-specific UI
+      els.closedBanner.style.display = 'none';
+      els.stepsWrapper.classList.remove('campaign-closed-overlay');
+      els.gallerySendSection.style.display = 'none';
+
+      // Show close button only after first send (campaign is locked)
+      els.closeCampaignSection.style.display = isLocked ? '' : 'none';
 
       setStepState('step1Card', isLocked ? 'done' : 'active');
       setStepState('step2Card', hasMessage ? 'active' : 'locked');
@@ -489,20 +570,10 @@
       }
       const total = state.campaignContacts.length;
       const unsent = computeUnsentCount();
-      const sendCount = typeof state.campaign.sendCount === "number" ? state.campaign.sendCount : 0;
+      const msg = state.campaign.message || els.message.value.trim();
+      const msgPreview = msg ? `"${msg.slice(0, 60)}${msg.length > 60 ? "…" : ""}"` : "(no message)";
 
-      let parts = [];
-      parts.push(`Total contacts: ${total}`);
-      parts.push(`Unsent contacts: ${unsent}`);
-      parts.push(`Campaign sends so far: ${sendCount}`);
-      if (state.campaign.message) {
-        parts.push(`Message: "${state.campaign.message.slice(0, 60)}${state.campaign.message.length > 60 ? "…" : ""}"`);
-      } else {
-        const current = els.message.value.trim();
-        parts.push(`Message (draft): "${current.slice(0, 60)}${current.length > 60 ? "…" : ""}"`);
-      }
-
-      els.reviewSummary.textContent = parts.join(" · ");
+      els.reviewSummary.textContent = `${total} contacts · ${unsent} new · Message: ${msgPreview}`;
     }
 
     function updateSendUX() {
@@ -512,49 +583,27 @@
       const storedMessage = state.campaign?.message || "";
       const effectiveMsg = state.campaign?.isLocked ? storedMessage : msgDraft;
 
-      if (!state.campaign) {
-        els.unsentBadge.textContent = "";
-        return;
-      }
-
-      els.unsentBadge.textContent = `Unsent contacts: ${unsent}`;
-      els.unsentBadge.className = "badge " + (unsent > 0 ? "okBadge" : "danger");
+      if (!state.campaign) return;
 
       if (state.campaign.isLocked) {
-        els.lockBadge.textContent = `🔒 Locked · ${fmt(state.campaign.lockedAt)}`;
-        els.sendModeTag.textContent = "Incremental send";
-        els.sendBtn.textContent = "Send to NEW contacts";
-        els.sendHelp.innerHTML =
-          `This campaign is locked. The message below is fixed from the first send and reused. ` +
-          `Clicking send will target only contacts that <strong>have not been sent</strong> yet.`;
+        // After first send: message is fixed, only new contacts can be sent to
+        els.sendBtn.textContent = `Send to New (${unsent})`;
+        els.sendHelp.innerHTML = unsent > 0
+          ? `<strong>${unsent} contact${unsent === 1 ? '' : 's'}</strong> haven't received the message yet.`
+          : `All contacts have been sent to.`;
         els.message.disabled = true;
         els.message.value = storedMessage || "";
-        els.messageHint.textContent = storedMessage
-          ? "Message locked from initial send."
-          : "Message locked, but empty (unexpected).";
-        els.messageHint.style.color = "#6b7280";
-
+        els.messageHint.textContent = "Saved from first send — can't be edited";
         els.sendBtn.disabled = (unsent === 0);
-        if (unsent === 0) {
-          els.sendHelp.innerHTML += `<br><span class="small">Add a new contact to enable incremental sending.</span>`;
-        }
       } else {
-        els.lockBadge.textContent = "🟢 Not locked";
-        els.sendModeTag.textContent = "Initial send";
-        els.sendBtn.textContent = "Lock & Send (ALL contacts)";
-        els.sendHelp.innerHTML =
-          `First send will <strong>lock</strong> this message and target <strong>all contacts</strong> currently in the campaign. ` +
-          `You can still add contacts later and send only to those new contacts.`;
+        // Before first send: composing message, building contact list
+        els.sendBtn.textContent = `Send to All (${total})`;
+        els.sendHelp.innerHTML = total > 0
+          ? `Will send your message to all <strong>${total} contact${total === 1 ? '' : 's'}</strong>. After sending, the message is saved and you can add more people later.`
+          : ``;
         els.message.disabled = false;
-        els.messageHint.textContent = "This message will be saved and locked on the first send.";
-        els.messageHint.style.color = "#6b7280";
-
+        els.messageHint.textContent = "";
         els.sendBtn.disabled = (total === 0 || effectiveMsg.length === 0);
-        if (total === 0) {
-          els.sendHelp.innerHTML += `<br><span class="small">Add at least one contact to enable sending.</span>`;
-        } else if (!effectiveMsg.length) {
-          els.sendHelp.innerHTML += `<br><span class="small">Enter a message to enable sending.</span>`;
-        }
       }
 
       updateReviewSummary();
@@ -576,6 +625,16 @@
       }
 
       updateSendUX();
+
+      // Show the public gallery share link if the campaign has a share token
+      if (state.campaign.shareToken) {
+        const url = `${window.location.origin}/gallery.html?token=${state.campaign.shareToken}`;
+        document.getElementById('shareUrl').value = url;
+        document.getElementById('shareBar').style.display = '';
+        document.getElementById('copyShareBtn').onclick = function() {
+          navigator.clipboard.writeText(url).then(() => showToast("Gallery link copied!", "success"));
+        };
+      }
     }
 
     async function loadGlobalContacts() {
@@ -966,6 +1025,41 @@
     });
     els.devSimulateBtn.onclick = simulateInbound;
     els.devMediaUrl.addEventListener('keydown', e => { if (e.key === 'Enter') simulateInbound(); });
+
+    els.closeCampaignBtn.onclick = async function() {
+      if (!confirm("Close this campaign? This will prevent any future sends. You'll still be able to receive photos and share the gallery link.")) return;
+      try {
+        await fetchJSON(`/api/campaigns/${encodeURIComponent(campaignId)}/close`, { method: "POST" });
+        showToast("Campaign closed.", "success");
+        await refreshAll();
+      } catch (e) {
+        showToast("Failed to close campaign: " + e.message, "error");
+      }
+    };
+
+    els.sendGalleryBtn.onclick = async function() {
+      const msg = els.galleryMessage.value.trim();
+      if (!msg) { showToast("Enter a message first.", "error"); return; }
+      if (!confirm(`Send this gallery link message to all campaign contacts?`)) return;
+
+      els.sendGalleryBtn.disabled = true;
+      els.galleryStatus.textContent = "Sending…";
+
+      try {
+        const res = await fetchJSON(`/api/campaigns/${encodeURIComponent(campaignId)}/send-gallery-link`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg })
+        });
+        showToast(`Gallery link sent to ${res.acceptedCount} contact(s)!`, "success");
+        await refreshAll();
+      } catch (e) {
+        showToast("Failed to send gallery link: " + e.message, "error");
+      } finally {
+        els.sendGalleryBtn.disabled = false;
+        els.galleryStatus.textContent = "";
+      }
+    };
 
     (async function init(){
       if (!campaignId) return;

@@ -19,6 +19,7 @@
 const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 
 // DATA_DIR can be overridden via env var (for Railway persistent volumes)
 // Defaults to ./data (same place JSON files lived)
@@ -110,6 +111,34 @@ try {
   // "duplicate column name" means it already exists — that's fine
 }
 
+try {
+  db.exec("ALTER TABLE campaigns ADD COLUMN shareToken TEXT");
+  console.log("Migration: added shareToken column to campaigns");
+  // Backfill existing campaigns with random tokens so they get gallery links too
+  const rows = db.prepare("SELECT id FROM campaigns WHERE shareToken IS NULL").all();
+  if (rows.length > 0) {
+    const update = db.prepare("UPDATE campaigns SET shareToken = ? WHERE id = ?");
+    for (const r of rows) update.run(crypto.randomBytes(16).toString("hex"), r.id);
+    console.log(`  Backfilled ${rows.length} campaigns with share tokens`);
+  }
+} catch (e) {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE campaigns ADD COLUMN isClosed INTEGER NOT NULL DEFAULT 0");
+  console.log("Migration: added isClosed column to campaigns");
+} catch (e) {
+  // column already exists
+}
+
+try {
+  db.exec("ALTER TABLE campaigns ADD COLUMN closedAt TEXT");
+  console.log("Migration: added closedAt column to campaigns");
+} catch (e) {
+  // column already exists
+}
+
 // ---------- Prepared statements ----------
 // Preparing statements ahead of time makes them faster and safer (auto-escapes values)
 
@@ -125,8 +154,9 @@ const stmts = {
   // Campaigns
   getAllCampaigns: db.prepare("SELECT * FROM campaigns ORDER BY createdAt DESC"),
   getCampaignById: db.prepare("SELECT * FROM campaigns WHERE id = ?"),
-  insertCampaign: db.prepare("INSERT INTO campaigns (id, name, createdAt, updatedAt, lastUpdated, sendCount, isLocked, lockedAt, message, driveFolderId) VALUES (@id, @name, @createdAt, @updatedAt, @lastUpdated, @sendCount, @isLocked, @lockedAt, @message, @driveFolderId)"),
-  updateCampaign: db.prepare("UPDATE campaigns SET name=@name, updatedAt=@updatedAt, lastUpdated=@lastUpdated, sendCount=@sendCount, isLocked=@isLocked, lockedAt=@lockedAt, message=@message, driveFolderId=@driveFolderId WHERE id=@id"),
+  insertCampaign: db.prepare("INSERT INTO campaigns (id, name, createdAt, updatedAt, lastUpdated, sendCount, isLocked, lockedAt, message, driveFolderId, shareToken, isClosed, closedAt) VALUES (@id, @name, @createdAt, @updatedAt, @lastUpdated, @sendCount, @isLocked, @lockedAt, @message, @driveFolderId, @shareToken, @isClosed, @closedAt)"),
+  updateCampaign: db.prepare("UPDATE campaigns SET name=@name, updatedAt=@updatedAt, lastUpdated=@lastUpdated, sendCount=@sendCount, isLocked=@isLocked, lockedAt=@lockedAt, message=@message, driveFolderId=@driveFolderId, shareToken=@shareToken, isClosed=@isClosed, closedAt=@closedAt WHERE id=@id"),
+  getCampaignByShareToken: db.prepare("SELECT * FROM campaigns WHERE shareToken = ?"),
 
   // Campaign contacts (memberships)
   getMembershipsByCampaign: db.prepare("SELECT * FROM campaign_contacts WHERE campaignId = ?"),
@@ -207,7 +237,10 @@ function migrateFromJson() {
         isLocked: c.isLocked ? 1 : 0,
         lockedAt: c.lockedAt || null,
         message: c.message || "",
-        driveFolderId: c.driveFolderId || null
+        driveFolderId: c.driveFolderId || null,
+        shareToken: c.shareToken || crypto.randomBytes(16).toString("hex"),
+        isClosed: c.isClosed ? 1 : 0,
+        closedAt: c.closedAt || null
       });
     }
   });
