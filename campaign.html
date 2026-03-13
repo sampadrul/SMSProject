@@ -54,22 +54,15 @@
     .photo-card img { width: 100%; height: 140px; object-fit: cover; display: block; }
     .photo-meta { padding: 4px 6px 6px; font-size: 11px; }
     .small-text { font-size: 11px; color: #64748b; }
-    .step-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #6366f1; }
-    .step-card { position: relative; }
-    .step-header-row { display: flex; align-items: flex-start; gap: 14px; }
-    .step-title-wrap { flex: 1; min-width: 0; }
-    .step-title-wrap h2 { margin: 2px 0 0; }
-    .step-num { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px; background: #2563eb; color: #fff; transition: background 0.2s, color 0.2s; }
-    .step-card.locked .step-num { background: #e0e7ff; color: #94a3b8; }
-    .step-card.done .step-num { background: #059669; color: #fff; }
-    .step-body { padding: 12px 0 8px 42px; }
-    .step-card.locked .step-body { display: none; }
-    .step-card.locked .step-header-row { opacity: 0.4; }
-    .step-card.locked { pointer-events: none; }
-    .step-connector { width: 2px; height: 20px; background: #e0e7ff; margin: 4px 0 4px 13px; }
     .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1.5px solid #bfdbfe; background: #eff6ff; color: #2563eb; }
     hr { border: none; border-top: 1px solid #e0e7ff; margin: 20px 0; }
     a { color: #2563eb; font-weight: 500; }
+
+    /* Mode-based layout */
+    .mode-setup { grid-template-columns: 1fr !important; max-width: 700px !important; }
+    .locked-msg-pill { padding: 10px 14px; border-radius: 8px; background: #eff6ff; border: 1.5px solid #bfdbfe; font-size: 13px; color: #1e3a5f; line-height: 1.5; margin-bottom: 4px; }
+    .locked-msg-pill .pill-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6366f1; margin-bottom: 4px; }
+
     @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
     @media (max-width: 600px) {
       header { flex-wrap: wrap; padding: 10px 12px; gap: 6px; }
@@ -87,15 +80,11 @@
       table { font-size: 11px; }
       th, td { padding: 6px 4px; }
       /* Contacts table: hide Phone + First sent + Last send (cols 2,3,4) */
-      #step2Card th:nth-child(2), #step2Card td:nth-child(2),
-      #step2Card th:nth-child(3), #step2Card td:nth-child(3),
-      #step2Card th:nth-child(4), #step2Card td:nth-child(4) { display: none; }
+      #contactsSection th:nth-child(2), #contactsSection td:nth-child(2),
+      #contactsSection th:nth-child(3), #contactsSection td:nth-child(3),
+      #contactsSection th:nth-child(4), #contactsSection td:nth-child(4) { display: none; }
       /* Send log table: hide Message (col 4) */
-      #step4Card th:nth-child(4), #step4Card td:nth-child(4) { display: none; }
-      .step-header-row { gap: 8px; }
-      .step-num { width: 24px; height: 24px; font-size: 11px; }
-      .step-body { padding: 8px 0 6px 32px; }
-      .step-connector { margin-left: 11px; height: 14px; }
+      #sendLogSection th:nth-child(4), #sendLogSection td:nth-child(4) { display: none; }
       button { padding: 7px 12px; font-size: 12px; }
       .badge, .lock, .pill { font-size: 10px; padding: 2px 6px; }
       select, textarea, input[type="text"] { font-size: 13px; padding: 7px 10px; }
@@ -124,13 +113,6 @@
     .skeleton-row.short { width: 35%; }
     .skeleton-bar { height: 22px; width: 200px; }
     .skeleton-card { height: 120px; border-radius: 10px; }
-
-    /* Step lock messages */
-    .step-lock-msg { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 8px; background: #f8faff; border: 1.5px dashed #c7d7fe; color: #64748b; font-size: 13px; margin-top: 4px; }
-    .step-card.locked { pointer-events: auto; }
-    .step-card.locked .step-body { display: block; }
-    .step-card.locked .step-body > :not(.step-lock-msg) { display: none; }
-    .step-card.locked .step-header-row { opacity: 0.5; }
 
     /* Progress bar */
     .progress-wrap { margin-bottom: 14px; }
@@ -174,8 +156,7 @@
     .closed-banner { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #ecfdf5); border: 1.5px solid #6ee7b7; color: #065f46; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
     .closed-banner .closed-icon { font-size: 20px; }
     .closed-banner .closed-date { font-weight: 400; font-size: 12px; color: #047857; margin-left: auto; }
-    .campaign-closed-overlay .step-card { opacity: 0.45; pointer-events: none; }
-    .campaign-closed-overlay .step-connector { opacity: 0.45; }
+    .contacts-closed { opacity: 0.45; pointer-events: none; }
     .gallery-send-section { padding: 18px 20px; border-radius: 10px; background: #f8faff; border: 1.5px solid #e0e7ff; margin-top: 16px; }
     .gallery-send-section h3 { margin: 0 0 6px; font-size: 14px; }
     .gallery-send-section textarea { min-height: 60px; }
@@ -200,7 +181,8 @@
     </div>
   </header>
 
-  <main>
+  <main id="campaignMain">
+    <!-- Left / workflow column -->
     <section>
       <div id="closedBanner" class="closed-banner" style="display:none;">
         <span class="closed-icon">✓</span>
@@ -208,99 +190,66 @@
         <span class="closed-date" id="closedDate"></span>
       </div>
 
-      <div id="stepsWrapper">
-      <!-- Step 1: Message -->
-      <div class="step-card" id="step1Card">
-        <div class="step-header-row">
-          <div class="step-num">1</div>
-          <div class="step-title-wrap">
-            <div class="step-label">Step 1</div>
-            <h2>Message</h2>
-          </div>
-        </div>
-        <div class="step-body">
-          <p class="subtle">Write the text message everyone will receive.</p>
-          <label for="message">Message text</label>
-          <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
-            <div class="small" id="messageHint"></div>
-            <div class="small" id="charCount"></div>
-          </div>
+      <!-- Message: editable (setup mode) -->
+      <div id="messageEdit">
+        <h2>Message</h2>
+        <p class="subtle">Write the text message everyone will receive.</p>
+        <label for="message">Message text</label>
+        <textarea id="message" placeholder="Hi {name}, please send me a photo..."></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px;">
+          <div class="small" id="messageHint"></div>
+          <div class="small" id="charCount"></div>
         </div>
       </div>
 
-      <div class="step-connector"></div>
-
-      <!-- Step 2: Contacts -->
-      <div class="step-card locked" id="step2Card">
-        <div class="step-header-row">
-          <div class="step-num">2</div>
-          <div class="step-title-wrap">
-            <div class="step-label">Step 2</div>
-            <h2>Contacts</h2>
-          </div>
-        </div>
-        <div class="step-body">
-          <div class="step-lock-msg" id="step2Lock">Write a message first</div>
-          <p class="subtle">Choose who receives this message.</p>
-          <div style="margin-bottom:10px;">
-            <label for="globalSelect">Add existing contact</label>
-            <select id="globalSelect"><option value="">Loading contacts…</option></select>
-            <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
-              <button id="addToCampaignBtn">Add to campaign</button>
-              <span class="small">New person? Add them on the <a href="contacts.html">Contacts</a> page.</span>
-            </div>
-          </div>
-          <table>
-            <thead><tr><th>Name</th><th>Phone</th><th>First sent</th><th>Last send</th><th></th></tr></thead>
-            <tbody id="contactsTbody"><tr><td colspan="5"><div class="skeleton skeleton-row wide"></div></td></tr><tr><td colspan="5"><div class="skeleton skeleton-row medium"></div></td></tr></tbody>
-          </table>
-        </div>
+      <!-- Message: locked display (manage mode) -->
+      <div id="messageLocked" class="locked-msg-pill" style="display:none;">
+        <div class="pill-label">Locked message</div>
+        <div id="lockedMessageText"></div>
       </div>
 
-      <div class="step-connector"></div>
+      <hr />
 
-      <!-- Step 3: Send -->
-      <div class="step-card locked" id="step3Card">
-        <div class="step-header-row">
-          <div class="step-num">3</div>
-          <div class="step-title-wrap">
-            <div class="step-label">Step 3</div>
-            <h2>Send</h2>
+      <!-- Contacts -->
+      <div id="contactsSection">
+        <h2>Contacts</h2>
+        <p class="subtle">Choose who receives this message. <span class="small">New person? Add them on the <a href="contacts.html">Contacts</a> page.</span></p>
+        <div style="margin-bottom:10px;">
+          <label for="globalSelect">Add existing contact</label>
+          <select id="globalSelect"><option value="">Loading contacts…</option></select>
+          <div style="margin-top:8px;">
+            <button id="addToCampaignBtn">Add to campaign</button>
           </div>
         </div>
-        <div class="step-body">
-          <div class="step-lock-msg" id="step3Lock">Add a contact first</div>
-          <p class="subtle" id="sendHelp"></p>
-          <div style="margin-bottom:8px;">
-            <div class="small">Summary</div>
-            <div class="small" id="reviewSummary"></div>
-          </div>
-          <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
-            <button id="sendBtn">Send</button>
-          </div>
-          <div id="sendStatus" class="status neutral"></div>
-        </div>
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>First sent</th><th>Last send</th><th></th></tr></thead>
+          <tbody id="contactsTbody"><tr><td colspan="5"><div class="skeleton skeleton-row wide"></div></td></tr><tr><td colspan="5"><div class="skeleton skeleton-row medium"></div></td></tr></tbody>
+        </table>
       </div>
 
-      <!-- Send Log + Dev — revealed after first send -->
-      <div id="sendLogSection" style="display:none">
-        <div class="step-connector"></div>
-        <div class="step-card" id="step4Card">
-          <div class="step-header-row">
-            <div class="step-num" style="background:#6366f1; font-size:15px;">✦</div>
-            <div class="step-title-wrap">
-              <h2 style="margin:2px 0 0;">Send History</h2>
-            </div>
-          </div>
-          <div class="step-body">
-            <p class="subtle">Record of every send.</p>
-            <table>
-              <thead><tr><th>When</th><th>Type</th><th>Targets</th><th>Message</th></tr></thead>
-              <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
-            </table>
-          </div>
+      <hr />
+
+      <!-- Send -->
+      <div id="sendSection">
+        <p class="subtle" id="sendHelp"></p>
+        <div style="margin-bottom:8px;">
+          <div class="small" id="reviewSummary"></div>
         </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button id="sendBtn">Send</button>
+        </div>
+        <div id="sendStatus" class="status neutral"></div>
+      </div>
+
+      <!-- Send History — manage mode only -->
+      <div id="sendLogSection" style="display:none;">
+        <hr />
+        <h2>Send History</h2>
+        <p class="subtle">Record of every send.</p>
+        <table>
+          <thead><tr><th>When</th><th>Type</th><th>Targets</th><th>Message</th></tr></thead>
+          <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
+        </table>
       </div>
 
       <div id="devSection" style="display:none; margin-top:20px; padding-top:16px; border-top:1px solid #e0e7ff;">
@@ -315,7 +264,6 @@
           <span class="small" id="devStatus"></span>
         </div>
       </div>
-      </div><!-- end #stepsWrapper -->
 
       <div id="closeCampaignSection" style="display:none;">
         <hr />
@@ -335,7 +283,8 @@
       </div>
     </section>
 
-    <section>
+    <!-- Right column: Photos — visible in manage mode only -->
+    <section id="photosSection" style="display:none;">
       <h2>Photos by Sender</h2>
       <p class="subtle">Photos received for contacts in this campaign.</p>
       <div id="shareBar" class="share-bar" style="display:none;">
@@ -415,16 +364,22 @@
 
       message: document.getElementById("message"),
       messageHint: document.getElementById("messageHint"),
+      messageEdit: document.getElementById("messageEdit"),
+      messageLocked: document.getElementById("messageLocked"),
+      lockedMessageText: document.getElementById("lockedMessageText"),
 
       globalSelect: document.getElementById("globalSelect"),
       addBtn: document.getElementById("addToCampaignBtn"),
       contactsTbody: document.getElementById("contactsTbody"),
+      contactsSection: document.getElementById("contactsSection"),
 
       sendBtn: document.getElementById("sendBtn"),
       sendStatus: document.getElementById("sendStatus"),
       sendHelp: document.getElementById("sendHelp"),
       reviewSummary: document.getElementById("reviewSummary"),
+      sendSection: document.getElementById("sendSection"),
 
+      photosSection: document.getElementById("photosSection"),
       sendLogTbody: document.getElementById("sendLogTbody"),
       photosContainer: document.getElementById("photosContainer"),
 
@@ -435,7 +390,6 @@
 
       closedBanner: document.getElementById("closedBanner"),
       closedDate: document.getElementById("closedDate"),
-      stepsWrapper: document.getElementById("stepsWrapper"),
       closeCampaignSection: document.getElementById("closeCampaignSection"),
       closeCampaignBtn: document.getElementById("closeCampaignBtn"),
       gallerySendSection: document.getElementById("gallerySendSection"),
@@ -469,83 +423,72 @@
       return state.campaignContacts.filter(c => !c.firstSentAt).length;
     }
 
-    function setStepState(id, stepState) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.classList.remove('active', 'locked', 'done');
-      el.classList.add(stepState);
-    }
-
-    function updateStepNum(cardId, stepState, label) {
-      const card = document.getElementById(cardId);
-      if (!card) return;
-      const numEl = card.querySelector('.step-num');
-      if (!numEl) return;
-      if (stepState === 'done') {
-        numEl.textContent = '✓';
-        numEl.style.fontSize = '14px';
-      } else if (stepState === 'locked') {
-        numEl.textContent = '🔒';
-        numEl.style.fontSize = '12px';
-      } else {
-        numEl.textContent = label;
-        numEl.style.fontSize = '12px';
-      }
-    }
-
-    function updateStepVisibility() {
+    // ---- Page mode switching ----
+    function updatePageMode() {
       const campaign = state.campaign;
       const isClosed = !!campaign?.isClosed;
       const isLocked = !!campaign?.isLocked;
-      const hasMessage = isLocked
-        ? !!campaign.message
-        : els.message.value.trim().length > 0;
-      const hasContacts = state.campaignContacts.length > 0;
       const hasSent = (campaign?.sendCount || 0) > 0;
 
-      // Closed state: show banner, dim steps, show gallery send, hide close button
-      if (isClosed) {
-        els.closedBanner.style.display = '';
-        els.closedDate.textContent = campaign.closedAt ? `Closed ${fmt(campaign.closedAt)}` : '';
-        els.stepsWrapper.classList.add('campaign-closed-overlay');
-        els.closeCampaignSection.style.display = 'none';
-        els.gallerySendSection.style.display = '';
-        // Pre-fill gallery message with campaign name and link
-        if (!els.galleryMessage.value) {
-          const galleryUrl = campaign.shareToken
-            ? `${window.location.origin}/gallery.html?token=${campaign.shareToken}`
-            : '(no gallery link)';
-          els.galleryMessage.value = `Here are the photos from ${campaign.name}! ${galleryUrl}`;
+      const main = document.getElementById('campaignMain');
+
+      if (isLocked) {
+        // === MANAGE MODE ===
+        main.classList.remove('mode-setup');
+        main.classList.add('mode-manage');
+
+        // Swap message display: hide editor, show locked pill
+        els.messageEdit.style.display = 'none';
+        els.messageLocked.style.display = '';
+        els.lockedMessageText.textContent = campaign.message || '';
+
+        // Show photos column
+        els.photosSection.style.display = '';
+
+        // Show send log
+        document.getElementById('sendLogSection').style.display = hasSent ? '' : 'none';
+
+        // Close campaign button (unless already closed)
+        els.closeCampaignSection.style.display = isClosed ? 'none' : '';
+
+        // Closed state specifics
+        if (isClosed) {
+          els.closedBanner.style.display = '';
+          els.closedDate.textContent = campaign.closedAt ? `Closed ${fmt(campaign.closedAt)}` : '';
+          els.gallerySendSection.style.display = '';
+          els.contactsSection.classList.add('contacts-closed');
+          els.sendSection.style.display = 'none';
+          // Pre-fill gallery message
+          if (!els.galleryMessage.value) {
+            const galleryUrl = campaign.shareToken
+              ? `${window.location.origin}/gallery.html?token=${campaign.shareToken}`
+              : '(no gallery link)';
+            els.galleryMessage.value = `Here are the photos from ${campaign.name}! ${galleryUrl}`;
+          }
+        } else {
+          els.closedBanner.style.display = 'none';
+          els.gallerySendSection.style.display = 'none';
+          els.contactsSection.classList.remove('contacts-closed');
+          els.sendSection.style.display = '';
         }
-        const sendLogEl = document.getElementById('sendLogSection');
-        if (sendLogEl) sendLogEl.style.display = hasSent ? '' : 'none';
-        return;
+      } else {
+        // === SETUP MODE ===
+        main.classList.remove('mode-manage');
+        main.classList.add('mode-setup');
+
+        // Show editor, hide locked pill
+        els.messageEdit.style.display = '';
+        els.messageLocked.style.display = 'none';
+
+        // Hide manage-only UI
+        els.photosSection.style.display = 'none';
+        document.getElementById('sendLogSection').style.display = 'none';
+        els.closeCampaignSection.style.display = 'none';
+        els.closedBanner.style.display = 'none';
+        els.gallerySendSection.style.display = 'none';
+        els.contactsSection.classList.remove('contacts-closed');
+        els.sendSection.style.display = '';
       }
-
-      // Not closed — hide closed-specific UI
-      els.closedBanner.style.display = 'none';
-      els.stepsWrapper.classList.remove('campaign-closed-overlay');
-      els.gallerySendSection.style.display = 'none';
-
-      // Show close button only after first send (campaign is locked)
-      els.closeCampaignSection.style.display = isLocked ? '' : 'none';
-
-      setStepState('step1Card', isLocked ? 'done' : 'active');
-      setStepState('step2Card', hasMessage ? 'active' : 'locked');
-      setStepState('step3Card', hasContacts ? 'active' : 'locked');
-
-      updateStepNum('step1Card', isLocked ? 'done' : 'active', '1');
-      updateStepNum('step2Card', hasMessage ? 'active' : 'locked', '2');
-      updateStepNum('step3Card', hasContacts ? 'active' : 'locked', '3');
-
-      // Toggle lock message visibility
-      const step2Lock = document.getElementById('step2Lock');
-      const step3Lock = document.getElementById('step3Lock');
-      if (step2Lock) step2Lock.style.display = hasMessage ? 'none' : 'flex';
-      if (step3Lock) step3Lock.style.display = hasContacts ? 'none' : 'flex';
-
-      const sendLogEl = document.getElementById('sendLogSection');
-      if (sendLogEl) sendLogEl.style.display = hasSent ? '' : 'none';
     }
 
     function updateCharCount() {
@@ -593,7 +536,7 @@
           : `All contacts have been sent to.`;
         els.message.disabled = true;
         els.message.value = storedMessage || "";
-        els.messageHint.textContent = "Saved from first send — can't be edited";
+        els.messageHint.textContent = "";
         els.sendBtn.disabled = (unsent === 0);
       } else {
         // Before first send: composing message, building contact list
@@ -609,7 +552,7 @@
       updateReviewSummary();
       updateCharCount();
       renderDevContactSelect();
-      updateStepVisibility();
+      updatePageMode();
     }
 
     async function loadCampaign() {
@@ -980,7 +923,7 @@
 
       const membership = state.campaignContacts.find(c => c.id === membershipId);
       if (!membership || !membership.phoneNumber) {
-        els.devStatus.textContent = "Could not find that contact’s phone number.";
+        els.devStatus.textContent = "Could not find that contact's phone number.";
         return;
       }
 
