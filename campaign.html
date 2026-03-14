@@ -76,6 +76,14 @@
     .stat-value { font-size: 24px; font-weight: 700; color: #1e40af; }
     .stat-label { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
 
+    /* Send history events */
+    .send-event { padding: 12px 14px; border-radius: 8px; background: #f8faff; border: 1px solid #e0e7ff; margin-bottom: 10px; }
+    .send-event-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .send-event-contacts { font-size: 13px; color: #1e3a5f; line-height: 1.6; }
+    .send-event-contacts .contact-name { display: inline-block; margin-right: 4px; }
+    .send-event-contacts .contact-name::after { content: ","; color: #94a3b8; }
+    .send-event-contacts .contact-name:last-child::after { content: ""; }
+
     @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
     @media (max-width: 600px) {
       header { flex-wrap: wrap; padding: 10px 12px; gap: 6px; }
@@ -94,8 +102,7 @@
       th, td { padding: 6px 4px; }
       /* Contacts table: hide Phone on small screens */
       #contactsSection th:nth-child(2), #contactsSection td:nth-child(2) { display: none; }
-      /* Send log table: hide Message (col 4) */
-      #sendLogSection th:nth-child(4), #sendLogSection td:nth-child(4) { display: none; }
+      .send-event-header { flex-wrap: wrap; }
       button { padding: 7px 12px; font-size: 12px; }
       .badge, .lock, .pill { font-size: 10px; padding: 2px 6px; }
       select, textarea, input[type="text"] { font-size: 13px; padding: 7px 10px; }
@@ -287,11 +294,7 @@
     <!-- Send History — visible in manage mode only -->
     <section id="sendLogSection" style="display:none;">
       <h2>Send History</h2>
-      <p class="subtle">Record of every send.</p>
-      <table>
-        <thead><tr><th>When</th><th>Type</th><th>Recipients</th><th>Message</th></tr></thead>
-        <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
-      </table>
+      <div id="sendLogContainer"><div class="small" style="padding:16px 0;text-align:center;">No sends yet.</div></div>
     </section>
 
     <!-- Photos — full width, visible in manage mode only -->
@@ -392,7 +395,7 @@
       sendSection: document.getElementById("sendSection"),
 
       photosSection: document.getElementById("photosSection"),
-      sendLogTbody: document.getElementById("sendLogTbody"),
+      sendLogContainer: document.getElementById("sendLogContainer"),
       photosContainer: document.getElementById("photosContainer"),
 
       devContact: document.getElementById("devContact"),
@@ -655,7 +658,7 @@
         const canRemove = !c.firstSentAt;
         tr.innerHTML = `
           <td><a href="contact.html?id=${encodeURIComponent(c.contactId)}">${c.name}</a></td>
-          <td class="small">${fmtPhone(c.phoneNumber)}</td>
+          <td class="small" style="text-align:right;">${fmtPhone(c.phoneNumber)}</td>
           <td style="text-align:right;">${canRemove ? `<button class="secondary" data-mid="${c.id}" title="Remove from campaign" style="padding:2px 7px;font-size:14px;line-height:1;">&times;</button>` : ''}</td>
         `;
         els.contactsTbody.appendChild(tr);
@@ -733,28 +736,40 @@
 
     async function loadSendLog() {
       const data = await fetchJSON(`/api/send-log?campaignId=${encodeURIComponent(campaignId)}`);
-      const events = (data.events || []).slice().sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+      const events = (data.events || []).slice().sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
 
-      els.sendLogTbody.innerHTML = "";
+      els.sendLogContainer.innerHTML = "";
       if (events.length === 0) {
-        els.sendLogTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px 8px;"><div style="font-size:24px;margin-bottom:4px;">📤</div><div class="small">No sends recorded yet.</div></td></tr>`;
+        els.sendLogContainer.innerHTML = `<div class="small" style="padding:16px 0;text-align:center;">No sends yet.</div>`;
         return;
       }
 
       for (const e of events) {
-        const tr = document.createElement("tr");
+        const card = document.createElement("div");
+        card.className = "send-event";
+
         const sent = (e.results || []).filter(r => r.ok);
         const failed = (e.results || []).filter(r => !r.ok);
-        const names = sent.map(r => r.contactName || 'Unknown').join(', ');
-        const recipientHtml = names
-          + (failed.length > 0 ? ` <span class="small err">(${failed.length} failed)</span>` : '');
-        tr.innerHTML = `
-          <td class="small">${fmt(e.sentAt)}</td>
-          <td><span class="badge">${e.type}</span></td>
-          <td>${recipientHtml || '<span class="small">None</span>'}</td>
-          <td class="small" title="${(e.message || "").replaceAll('"','&quot;')}">${(e.message || "").slice(0, 60)}${(e.message || "").length > 60 ? "…" : ""}</td>
+        const nameSpans = sent.map(r =>
+          `<span class="contact-name">${r.contactName || 'Unknown'}</span>`
+        ).join(' ');
+        const failedHtml = failed.length > 0
+          ? ` <span class="small err">(${failed.length} failed)</span>` : '';
+
+        const typeLabel = e.type === 'initial' ? 'Initial Send'
+          : e.type === 'incremental' ? 'Subsequent Send'
+          : e.type === 'gallery-link' ? 'Gallery Link'
+          : e.type;
+
+        card.innerHTML = `
+          <div class="send-event-header">
+            <span class="badge">${typeLabel}</span>
+            <span class="small">${fmt(e.sentAt)}</span>
+          </div>
+          <div class="send-event-contacts">${nameSpans || '<span class="small">None</span>'}${failedHtml}</div>
         `;
-        els.sendLogTbody.appendChild(tr);
+
+        els.sendLogContainer.appendChild(card);
       }
     }
 
