@@ -62,6 +62,19 @@
     .mode-setup { grid-template-columns: 1fr !important; max-width: 700px !important; }
     .locked-msg-pill { padding: 10px 14px; border-radius: 8px; background: #eff6ff; border: 1.5px solid #bfdbfe; font-size: 13px; color: #1e3a5f; line-height: 1.5; margin-bottom: 4px; }
     .locked-msg-pill .pill-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6366f1; margin-bottom: 4px; }
+    #photosSection { grid-column: 1 / -1; }
+    #sendLogSection { align-self: start; }
+
+    /* Campaign status bar */
+    .campaign-status-bar { grid-column: 1 / -1; }
+    .status-bar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .status-badge.active { background: #dbeafe; color: #1d4ed8; }
+    .status-badge.closed { background: #d1fae5; color: #065f46; }
+    .stat-cards { display: flex; gap: 12px; margin-top: 16px; }
+    .stat-card { flex: 1; text-align: center; padding: 12px 8px; background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 10px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #1e40af; }
+    .stat-label { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
 
     @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
     @media (max-width: 600px) {
@@ -79,10 +92,8 @@
       label { font-size: 10px; }
       table { font-size: 11px; }
       th, td { padding: 6px 4px; }
-      /* Contacts table: hide Phone + First sent + Last send (cols 2,3,4) */
-      #contactsSection th:nth-child(2), #contactsSection td:nth-child(2),
-      #contactsSection th:nth-child(3), #contactsSection td:nth-child(3),
-      #contactsSection th:nth-child(4), #contactsSection td:nth-child(4) { display: none; }
+      /* Contacts table: hide Phone on small screens */
+      #contactsSection th:nth-child(2), #contactsSection td:nth-child(2) { display: none; }
       /* Send log table: hide Message (col 4) */
       #sendLogSection th:nth-child(4), #sendLogSection td:nth-child(4) { display: none; }
       button { padding: 7px 12px; font-size: 12px; }
@@ -92,6 +103,11 @@
       .photo-card img { height: 110px; }
       .toast { min-width: auto; max-width: calc(100vw - 24px); }
       .toast-container { right: 8px; left: 8px; }
+      .stat-cards { gap: 8px; }
+      .stat-card { padding: 8px 4px; }
+      .stat-value { font-size: 18px; }
+      .stat-label { font-size: 9px; }
+      .status-bar-header { flex-wrap: wrap; gap: 8px; }
     }
 
     /* Toast notifications */
@@ -153,9 +169,6 @@
     .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
 
     /* Closed campaign state */
-    .closed-banner { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 10px; background: linear-gradient(135deg, #d1fae5, #ecfdf5); border: 1.5px solid #6ee7b7; color: #065f46; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-    .closed-banner .closed-icon { font-size: 20px; }
-    .closed-banner .closed-date { font-weight: 400; font-size: 12px; color: #047857; margin-left: auto; }
     .contacts-closed { opacity: 0.45; pointer-events: none; }
     .gallery-send-section { padding: 18px 20px; border-radius: 10px; background: #f8faff; border: 1.5px solid #e0e7ff; margin-top: 16px; }
     .gallery-send-section h3 { margin: 0 0 6px; font-size: 14px; }
@@ -182,14 +195,36 @@
   </header>
 
   <main id="campaignMain">
-    <!-- Left / workflow column -->
-    <section>
-      <div id="closedBanner" class="closed-banner" style="display:none;">
-        <span class="closed-icon">✓</span>
-        <span>This campaign is closed</span>
-        <span class="closed-date" id="closedDate"></span>
+    <!-- Campaign status bar — full width, manage mode only -->
+    <section id="statusBar" class="campaign-status-bar" style="display:none;">
+      <div class="status-bar-header">
+        <div class="status-badge active" id="statusBadge">● Active</div>
+        <button class="close-campaign" id="closeCampaignBtn">Close Campaign</button>
       </div>
+      <div class="locked-msg-pill" id="statusBarMessage">
+        <div class="pill-label">Message</div>
+        <div id="lockedMessageText"></div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card"><div class="stat-value" id="statContacts">–</div><div class="stat-label">Contacts</div></div>
+        <div class="stat-card"><div class="stat-value" id="statSends">–</div><div class="stat-label">Sends</div></div>
+        <div class="stat-card"><div class="stat-value" id="statPhotos">–</div><div class="stat-label">Photos</div></div>
+        <div class="stat-card"><div class="stat-value" id="statResponse">–</div><div class="stat-label">Response</div></div>
+      </div>
+      <div id="gallerySendSection" class="gallery-send-section" style="display:none;">
+        <h3>Send Gallery Link</h3>
+        <p class="subtle">Send everyone a link to view the photos. This sends to all campaign contacts.</p>
+        <label for="galleryMessage">Message</label>
+        <textarea id="galleryMessage"></textarea>
+        <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
+          <button id="sendGalleryBtn">Send Gallery Link</button>
+          <span class="small" id="galleryStatus"></span>
+        </div>
+      </div>
+    </section>
 
+    <!-- Workflow column -->
+    <section>
       <!-- Message: editable (setup mode) -->
       <div id="messageEdit">
         <h2>Message</h2>
@@ -200,15 +235,8 @@
           <div class="small" id="messageHint"></div>
           <div class="small" id="charCount"></div>
         </div>
+        <hr />
       </div>
-
-      <!-- Message: locked display (manage mode) -->
-      <div id="messageLocked" class="locked-msg-pill" style="display:none;">
-        <div class="pill-label">Locked message</div>
-        <div id="lockedMessageText"></div>
-      </div>
-
-      <hr />
 
       <!-- Contacts -->
       <div id="contactsSection">
@@ -222,8 +250,8 @@
           </div>
         </div>
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>First sent</th><th>Last send</th><th></th></tr></thead>
-          <tbody id="contactsTbody"><tr><td colspan="5"><div class="skeleton skeleton-row wide"></div></td></tr><tr><td colspan="5"><div class="skeleton skeleton-row medium"></div></td></tr></tbody>
+          <thead><tr><th>Name</th><th>Phone</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="contactsTbody"><tr><td colspan="3"><div class="skeleton skeleton-row wide"></div></td></tr><tr><td colspan="3"><div class="skeleton skeleton-row medium"></div></td></tr></tbody>
         </table>
       </div>
 
@@ -241,17 +269,6 @@
         <div id="sendStatus" class="status neutral"></div>
       </div>
 
-      <!-- Send History — manage mode only -->
-      <div id="sendLogSection" style="display:none;">
-        <hr />
-        <h2>Send History</h2>
-        <p class="subtle">Record of every send.</p>
-        <table>
-          <thead><tr><th>When</th><th>Type</th><th>Targets</th><th>Message</th></tr></thead>
-          <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
-        </table>
-      </div>
-
       <div id="devSection" style="display:none; margin-top:20px; padding-top:16px; border-top:1px solid #e0e7ff;">
         <h3 style="margin:0 0 6px;">Dev: Simulate Inbound MMS</h3>
         <p class="subtle">Pretend Twilio sent a photo from one of this campaign's contacts — useful for testing without curl.</p>
@@ -265,25 +282,19 @@
         </div>
       </div>
 
-      <div id="closeCampaignSection" style="display:none;">
-        <hr />
-        <button class="close-campaign" id="closeCampaignBtn">Close Campaign</button>
-        <p class="subtle" style="margin-top:6px;">Closing prevents further sends. You can still receive photos and send the gallery link.</p>
-      </div>
-
-      <div id="gallerySendSection" class="gallery-send-section" style="display:none;">
-        <h3>Send Gallery Link</h3>
-        <p class="subtle">Send everyone a link to view the photos. This sends to all campaign contacts.</p>
-        <label for="galleryMessage">Message</label>
-        <textarea id="galleryMessage"></textarea>
-        <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
-          <button id="sendGalleryBtn">Send Gallery Link</button>
-          <span class="small" id="galleryStatus"></span>
-        </div>
-      </div>
     </section>
 
-    <!-- Right column: Photos — visible in manage mode only -->
+    <!-- Send History — visible in manage mode only -->
+    <section id="sendLogSection" style="display:none;">
+      <h2>Send History</h2>
+      <p class="subtle">Record of every send.</p>
+      <table>
+        <thead><tr><th>When</th><th>Type</th><th>Recipients</th><th>Message</th></tr></thead>
+        <tbody id="sendLogTbody"><tr><td colspan="4" class="small">No sends yet.</td></tr></tbody>
+      </table>
+    </section>
+
+    <!-- Photos — full width, visible in manage mode only -->
     <section id="photosSection" style="display:none;">
       <h2>Photos by Sender</h2>
       <p class="subtle">Photos received for contacts in this campaign.</p>
@@ -365,7 +376,8 @@
       message: document.getElementById("message"),
       messageHint: document.getElementById("messageHint"),
       messageEdit: document.getElementById("messageEdit"),
-      messageLocked: document.getElementById("messageLocked"),
+      statusBar: document.getElementById("statusBar"),
+      statusBadge: document.getElementById("statusBadge"),
       lockedMessageText: document.getElementById("lockedMessageText"),
 
       globalSelect: document.getElementById("globalSelect"),
@@ -388,9 +400,6 @@
       devSimulateBtn: document.getElementById("devSimulateBtn"),
       devStatus: document.getElementById("devStatus"),
 
-      closedBanner: document.getElementById("closedBanner"),
-      closedDate: document.getElementById("closedDate"),
-      closeCampaignSection: document.getElementById("closeCampaignSection"),
       closeCampaignBtn: document.getElementById("closeCampaignBtn"),
       gallerySendSection: document.getElementById("gallerySendSection"),
       galleryMessage: document.getElementById("galleryMessage"),
@@ -437,24 +446,16 @@
         main.classList.remove('mode-setup');
         main.classList.add('mode-manage');
 
-        // Swap message display: hide editor, show locked pill
+        // Show status bar, hide message editor
+        els.statusBar.style.display = '';
         els.messageEdit.style.display = 'none';
-        els.messageLocked.style.display = '';
         els.lockedMessageText.textContent = campaign.message || '';
 
-        // Show photos column
-        els.photosSection.style.display = '';
-
-        // Show send log
-        document.getElementById('sendLogSection').style.display = hasSent ? '' : 'none';
-
-        // Close campaign button (unless already closed)
-        els.closeCampaignSection.style.display = isClosed ? 'none' : '';
-
-        // Closed state specifics
+        // Update status badge and close button
         if (isClosed) {
-          els.closedBanner.style.display = '';
-          els.closedDate.textContent = campaign.closedAt ? `Closed ${fmt(campaign.closedAt)}` : '';
+          els.statusBadge.className = 'status-badge closed';
+          els.statusBadge.textContent = '\u2713 Closed' + (campaign.closedAt ? ' \u00b7 ' + fmt(campaign.closedAt) : '');
+          els.closeCampaignBtn.style.display = 'none';
           els.gallerySendSection.style.display = '';
           els.contactsSection.classList.add('contacts-closed');
           els.sendSection.style.display = 'none';
@@ -466,25 +467,38 @@
             els.galleryMessage.value = `Here are the photos from ${campaign.name}! ${galleryUrl}`;
           }
         } else {
-          els.closedBanner.style.display = 'none';
+          els.statusBadge.className = 'status-badge active';
+          els.statusBadge.textContent = '\u25cf Active';
+          els.closeCampaignBtn.style.display = '';
           els.gallerySendSection.style.display = 'none';
           els.contactsSection.classList.remove('contacts-closed');
           els.sendSection.style.display = '';
         }
+
+        // Update stat cards
+        document.getElementById('statContacts').textContent = campaign.contactCount || 0;
+        document.getElementById('statSends').textContent = campaign.sendCount || 0;
+        document.getElementById('statPhotos').textContent = campaign.responseCount || 0;
+        const rate = campaign.contactCount > 0
+          ? Math.round((campaign.responseCount / campaign.contactCount) * 100)
+          : 0;
+        document.getElementById('statResponse').textContent = rate + '%';
+
+        // Show photos and send log
+        els.photosSection.style.display = '';
+        document.getElementById('sendLogSection').style.display = hasSent ? '' : 'none';
       } else {
         // === SETUP MODE ===
         main.classList.remove('mode-manage');
         main.classList.add('mode-setup');
 
-        // Show editor, hide locked pill
+        // Hide status bar, show message editor
+        els.statusBar.style.display = 'none';
         els.messageEdit.style.display = '';
-        els.messageLocked.style.display = 'none';
 
         // Hide manage-only UI
         els.photosSection.style.display = 'none';
         document.getElementById('sendLogSection').style.display = 'none';
-        els.closeCampaignSection.style.display = 'none';
-        els.closedBanner.style.display = 'none';
         els.gallerySendSection.style.display = 'none';
         els.contactsSection.classList.remove('contacts-closed');
         els.sendSection.style.display = '';
@@ -632,22 +646,17 @@
       els.contactsTbody.innerHTML = "";
 
       if (rows.length === 0) {
-        els.contactsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px 8px;"><div style="font-size:24px;margin-bottom:4px;">👥</div><div class="small">No contacts assigned — use the dropdown above to add people to this campaign.</div></td></tr>`;
+        els.contactsTbody.innerHTML = `<tr><td colspan="3" style="text-align:center;padding:24px 8px;"><div style="font-size:24px;margin-bottom:4px;">👥</div><div class="small">No contacts assigned — use the dropdown above to add people to this campaign.</div></td></tr>`;
         return;
       }
 
       for (const c of rows) {
         const tr = document.createElement("tr");
+        const canRemove = !c.firstSentAt;
         tr.innerHTML = `
-          <td>
-            <a href="contact.html?id=${encodeURIComponent(c.contactId)}">
-              ${c.name}
-            </a>
-          </td>
-          <td>${fmtPhone(c.phoneNumber)}</td>
-          <td class="small">${fmt(c.firstSentAt)}</td>
-          <td class="small">${fmt(c.lastOutboundAt)}</td>
-          <td><button class="secondary" data-mid="${c.id}">Remove</button></td>
+          <td><a href="contact.html?id=${encodeURIComponent(c.contactId)}">${c.name}</a></td>
+          <td class="small">${fmtPhone(c.phoneNumber)}</td>
+          <td style="text-align:right;">${canRemove ? `<button class="secondary" data-mid="${c.id}" title="Remove from campaign" style="padding:2px 7px;font-size:14px;line-height:1;">&times;</button>` : ''}</td>
         `;
         els.contactsTbody.appendChild(tr);
       }
@@ -734,10 +743,15 @@
 
       for (const e of events) {
         const tr = document.createElement("tr");
+        const sent = (e.results || []).filter(r => r.ok);
+        const failed = (e.results || []).filter(r => !r.ok);
+        const names = sent.map(r => r.contactName || 'Unknown').join(', ');
+        const recipientHtml = names
+          + (failed.length > 0 ? ` <span class="small err">(${failed.length} failed)</span>` : '');
         tr.innerHTML = `
           <td class="small">${fmt(e.sentAt)}</td>
           <td><span class="badge">${e.type}</span></td>
-          <td>${e.targetCount}</td>
+          <td>${recipientHtml || '<span class="small">None</span>'}</td>
           <td class="small" title="${(e.message || "").replaceAll('"','&quot;')}">${(e.message || "").slice(0, 60)}${(e.message || "").length > 60 ? "…" : ""}</td>
         `;
         els.sendLogTbody.appendChild(tr);

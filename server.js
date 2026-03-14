@@ -512,8 +512,17 @@ app.get("/api/send-log", (req, res) => {
   let events = campaignId
     ? stmts.getSendLogByCampaign.all(campaignId)
     : stmts.getAllSendLog.all();
-  // Parse JSON results column back to arrays
-  events = events.map(e => ({ ...e, results: JSON.parse(e.results || "[]") }));
+  // Parse JSON results and enrich with contact names
+  events = events.map(e => {
+    const results = JSON.parse(e.results || "[]").map(r => {
+      if (r.contactId) {
+        const contact = stmts.getContactById.get(r.contactId);
+        r.contactName = contact ? contact.name : null;
+      }
+      return r;
+    });
+    return { ...e, results };
+  });
   res.json({ events });
 });
 
