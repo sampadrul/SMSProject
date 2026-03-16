@@ -175,6 +175,55 @@
     .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
     .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
 
+    /* Select mode */
+    .photo-card { position: relative; }
+    .select-check {
+      position: absolute; top: 8px; right: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid #fff; background: rgba(0,0,0,0.3);
+      display: none; align-items: center; justify-content: center;
+      pointer-events: none; transition: background 0.15s, border-color 0.15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    .select-check svg { width: 16px; height: 16px; fill: none; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+    body.select-mode .select-check { display: flex; }
+    body.select-mode .photo-card { cursor: pointer; }
+    body.select-mode .photo-card img { cursor: pointer; }
+    .photo-card.selected .select-check { background: #2563eb; border-color: #2563eb; }
+    .photo-card.selected .select-check svg { opacity: 1; }
+    body.select-mode .photo-card:not(.selected) { opacity: 0.7; }
+    body.select-mode .photo-card:not(.selected):hover { opacity: 0.85; }
+
+    .select-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      background: #fff; border-top: 1px solid #e0e7ff;
+      box-shadow: 0 -2px 12px rgba(37,99,235,0.1);
+      padding: 12px 20px; display: flex; align-items: center; justify-content: space-between;
+      transform: translateY(100%); transition: transform 0.25s ease;
+    }
+    .select-bar.visible { transform: translateY(0); }
+    .select-bar #selectInfo { font-size: 13px; font-weight: 600; color: #0f172a; }
+    .select-bar button {
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      padding: 7px 16px; border-radius: 8px; cursor: pointer; border: none; margin-left: 6px;
+      background: none; box-shadow: none; transform: none;
+    }
+    .select-bar button:hover { transform: none; box-shadow: none; }
+    .select-bar #selectAllBtn { background: #f0f4ff; color: #2563eb; border: 1px solid #c7d7fe; }
+    .select-bar #selectAllBtn:hover { background: #dbeafe; }
+    .select-bar #saveSelectedBtn { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 1px 3px rgba(37,99,235,0.3); }
+    .select-bar #saveSelectedBtn:hover:not(:disabled) { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+    .select-bar #saveSelectedBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .select-bar #cancelSelectBtn { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .select-bar #cancelSelectBtn:hover { background: #e2e8f0; }
+
+    body.select-mode .dev-fab { bottom: 72px; }
+
+    @media (max-width: 600px) {
+      .select-bar { padding: 10px 12px; }
+      .select-bar button { padding: 7px 10px; font-size: 12px; }
+    }
+
     /* Closed campaign state */
     .contacts-closed { opacity: 0.45; pointer-events: none; }
     .gallery-send-section { padding: 18px 20px; border-radius: 10px; background: #f8faff; border: 1.5px solid #e0e7ff; margin-top: 16px; }
@@ -198,6 +247,7 @@
       <a href="dashboard.html" class="active">Campaigns</a>
       <a href="contacts.html">Contacts</a>
       <a href="photos.html">Photos</a>
+      <button id="selectToggle" style="display:none;color:#bfdbfe;font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);cursor:pointer;font-family:inherit;box-shadow:none;transform:none;">Select</button>
     </div>
   </header>
 
@@ -321,6 +371,15 @@
 
   <div class="toast-container" id="toastContainer"></div>
 
+  <div class="select-bar" id="selectBar">
+    <span id="selectInfo">0 selected</span>
+    <div>
+      <button id="selectAllBtn">Select All</button>
+      <button id="saveSelectedBtn" disabled>Save</button>
+      <button id="cancelSelectBtn">Cancel</button>
+    </div>
+  </div>
+
   <button id="devFab" class="dev-fab" title="Toggle Dev Mode">&#9881;</button>
 
   <div class="lightbox-overlay" id="lightbox">
@@ -366,8 +425,118 @@
       if (e.target === this) closeLightbox();
     };
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'Escape') {
+        if (selectMode) { exitSelectMode(); return; }
+        closeLightbox();
+      }
     });
+
+    // --- Select Mode ---
+    let selectMode = false;
+    const selectedPhotos = new Map(); // url → filename
+
+    function enterSelectMode() {
+      selectMode = true;
+      document.body.classList.add('select-mode');
+      document.getElementById('selectToggle').textContent = 'Done';
+      updateSelectBar();
+    }
+
+    function exitSelectMode() {
+      selectMode = false;
+      document.body.classList.remove('select-mode');
+      document.getElementById('selectToggle').textContent = 'Select';
+      selectedPhotos.clear();
+      document.querySelectorAll('.photo-card.selected').forEach(c => c.classList.remove('selected'));
+      document.getElementById('selectBar').classList.remove('visible');
+    }
+
+    function updateSelectBar() {
+      const count = selectedPhotos.size;
+      document.getElementById('selectInfo').textContent = count === 0 ? '0 selected' : `${count} photo${count > 1 ? 's' : ''} selected`;
+      document.getElementById('saveSelectedBtn').disabled = count === 0;
+      document.getElementById('selectBar').classList.toggle('visible', selectMode);
+    }
+
+    function toggleSelectCard(card, url, filename) {
+      if (card.classList.toggle('selected')) {
+        selectedPhotos.set(url, filename);
+      } else {
+        selectedPhotos.delete(url);
+      }
+      updateSelectBar();
+    }
+
+    document.getElementById('selectToggle').onclick = function() {
+      if (selectMode) exitSelectMode(); else enterSelectMode();
+    };
+
+    document.getElementById('cancelSelectBtn').onclick = exitSelectMode;
+
+    document.getElementById('selectAllBtn').onclick = function() {
+      const allCards = document.querySelectorAll('.photo-card');
+      const allSelected = selectedPhotos.size === allCards.length;
+      allCards.forEach(card => {
+        const url = card.dataset.photoUrl;
+        const filename = card.dataset.photoFilename;
+        if (allSelected) {
+          card.classList.remove('selected');
+          selectedPhotos.delete(url);
+        } else {
+          card.classList.add('selected');
+          selectedPhotos.set(url, filename);
+        }
+      });
+      this.textContent = allSelected ? 'Select All' : 'Deselect All';
+      updateSelectBar();
+    };
+
+    async function saveSelectedPhotos() {
+      const saveBtn = document.getElementById('saveSelectedBtn');
+      const count = selectedPhotos.size;
+      if (count === 0) return;
+
+      saveBtn.disabled = true;
+      showToast(`Preparing ${count} photo${count > 1 ? 's' : ''}…`, 'info');
+
+      try {
+        // 1. Fetch every selected photo as a File object
+        const files = [];
+        for (const [url, filename] of selectedPhotos.entries()) {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          files.push(new File([blob], filename, { type: blob.type || 'image/jpeg' }));
+        }
+
+        // 2. iOS/Android: use Web Share API to open the native share sheet
+        if (navigator.canShare && navigator.canShare({ files })) {
+          await navigator.share({ files });
+          showToast(`Shared ${files.length} photo${files.length > 1 ? 's' : ''}!`, 'success');
+        } else {
+          // 3. Desktop fallback: trigger a download for each file
+          for (const file of files) {
+            const blobUrl = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+          }
+          showToast(`Downloaded ${files.length} photo${files.length > 1 ? 's' : ''}!`, 'success');
+        }
+      } catch (err) {
+        // AbortError = user dismissed the share sheet, not a real error
+        if (err.name !== 'AbortError') {
+          showToast('Failed to save photos: ' + err.message, 'error');
+        }
+      } finally {
+        saveBtn.disabled = selectedPhotos.size === 0;
+      }
+    }
+
+    document.getElementById('saveSelectedBtn').onclick = saveSelectedPhotos;
 
     const campaignId = new URLSearchParams(window.location.search).get("id");
     if (!campaignId) showToast("No campaign id provided in URL (expected ?id=...)", "error");
@@ -817,10 +986,17 @@
 
       updateProgressBar(items.length);
 
+      // Show/hide the Select button based on whether photos exist
+      const totalPhotos = items.reduce((sum, s) => sum + s.photos.length, 0);
+      document.getElementById('selectToggle').style.display = totalPhotos > 0 ? '' : 'none';
+
       if (items.length === 0) {
         els.photosContainer.innerHTML = `<div style="text-align:center;padding:32px 8px;"><div style="font-size:28px;margin-bottom:6px;">📸</div><div class="small">No photos received yet. They'll appear here as contacts reply.</div></div>`;
         return;
       }
+
+      // If we're rebuilding photos, exit select mode to avoid stale references
+      if (selectMode) exitSelectMode();
 
       els.photosContainer.innerHTML = "";
 
@@ -844,12 +1020,28 @@
         for (const p of sender.photos) {
           const card = document.createElement("div");
           card.className = "photo-card";
+          card.dataset.photoUrl = p.url;
+          card.dataset.photoFilename = p.filename;
+
+          // Checkmark overlay (visible only in select mode via CSS)
+          const check = document.createElement("div");
+          check.className = "select-check";
+          check.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+          card.appendChild(check);
 
           const img = document.createElement("img");
           img.src = p.url;
           img.alt = p.filename;
           img.style.cursor = 'pointer';
-          img.onclick = () => openLightbox(img.src, img.alt);
+
+          // Click branches: select mode toggles selection, normal opens lightbox
+          card.onclick = function() {
+            if (selectMode) {
+              toggleSelectCard(card, p.url, p.filename);
+            } else {
+              openLightbox(p.url, p.filename);
+            }
+          };
           card.appendChild(img);
 
           const meta = document.createElement("div");
