@@ -25,6 +25,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
+const { uploadBufferToDrive, createDriveFolder } = require("./googleDrive");
 
 // ---------- Helpers ----------
 
@@ -165,6 +166,27 @@ async function seed() {
     closedAt: pastDate(5),
   };
 
+  // If Google Drive is configured, create subfolders for each campaign
+  // (same as POST /api/campaigns does in server.js)
+  const parentFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  if (parentFolderId) {
+    console.log("Google Drive configured — creating campaign subfolders...");
+    try {
+      const wFolder = await createDriveFolder({ folderName: wedding.name, parentFolderId });
+      wedding.driveFolderId = wFolder.id;
+      console.log(`  Created Drive folder for "${wedding.name}"`);
+    } catch (e) {
+      console.warn(`  Could not create Drive folder for "${wedding.name}": ${e.message}`);
+    }
+    try {
+      const bFolder = await createDriveFolder({ folderName: babyShower.name, parentFolderId });
+      babyShower.driveFolderId = bFolder.id;
+      console.log(`  Created Drive folder for "${babyShower.name}"`);
+    } catch (e) {
+      console.warn(`  Could not create Drive folder for "${babyShower.name}": ${e.message}`);
+    }
+  }
+
   stmts.insertCampaign.run(wedding);
   stmts.insertCampaign.run(babyShower);
 
@@ -267,9 +289,10 @@ async function seed() {
   stmts.insertSendLog.run(babyShowerSend2);
 
   // ---- 5. Photos ----
-  // Download random photos from picsum.photos and save them locally.
+  // Download random photos from picsum.photos (and upload to Drive if configured).
   // 10 for the wedding (from various contacts), 5 for the baby shower
-  console.log("Downloading photos from picsum.photos (this may take a moment)...");
+  const driveEnabled = !!(parentFolderId);
+  console.log(`Downloading photos from picsum.photos${driveEnabled ? " + uploading to Drive" : ""}…`);
 
   // Assign photos to specific contacts to make it realistic
   // Wedding: spread across 5 senders, baby shower: 3 senders
@@ -311,6 +334,25 @@ async function seed() {
       const fileBuffer = fs.readFileSync(filePath);
       const contentHash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
+      // Upload to Google Drive if configured (so photos work on Railway)
+      let driveFileId = null;
+      let driveWebViewLink = null;
+      const driveFolderId = campaign.driveFolderId || parentFolderId;
+      if (driveFolderId) {
+        try {
+          const uploadResult = await uploadBufferToDrive({
+            buffer: fileBuffer,
+            filename,
+            mimeType: "image/jpeg",
+            folderId: driveFolderId,
+          });
+          driveFileId = uploadResult.id;
+          driveWebViewLink = uploadResult.webViewLink || null;
+        } catch (e) {
+          console.warn(`  Drive upload failed for ${filename}: ${e.message}`);
+        }
+      }
+
       // Figure out a realistic "received" time
       const daysAgo = campaign === wedding ? 11 - photoCount * 0.3 : 8 - photoCount * 0.5;
 
@@ -324,8 +366,8 @@ async function seed() {
         assignedFromLastOutboundAt: campaign === wedding ? pastDate(12) : pastDate(19),
         contentHash,
         similarInOtherCampaigns: "[]",
-        driveFileId: null,       // no Drive — photos serve from local fallback
-        driveWebViewLink: null,
+        driveFileId,
+        driveWebViewLink,
       });
 
       photoCount++;
