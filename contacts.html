@@ -121,7 +121,7 @@
 
       <table>
         <thead>
-          <tr><th>Name</th><th>Phone</th><th>Created</th><th></th></tr>
+          <tr><th>Name</th><th>Phone</th><th>Created</th></tr>
         </thead>
         <tbody id="tbody">
           <tr><td colspan="4"><div class="skeleton skeleton-row wide"></div></td></tr>
@@ -218,23 +218,9 @@
           <td>${c.name}</td>
           <td>${fmtPhone(c.phoneNumber)}</td>
           <td class="small">${fmt(c.createdAt)}</td>
-          <td><button class="secondary" data-id="${c.id}">Delete</button></td>
         `;
         tbody.appendChild(tr);
       }
-
-      tbody.querySelectorAll("button[data-id]").forEach(btn => {
-        btn.onclick = async () => {
-          if (!confirm("Delete this contact and remove from all campaigns?")) return;
-          try {
-            await fetchJSON("/api/global-contacts/" + encodeURIComponent(btn.dataset.id), { method: "DELETE" });
-            showToast("Contact deleted.", "info");
-            await load();
-          } catch (e) {
-            showToast("Failed to delete contact: " + e.message, "error");
-          }
-        };
-      });
     }
 
     addBtn.onclick = async () => {
