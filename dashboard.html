@@ -80,10 +80,19 @@
     .skeleton-row.medium { width: 60%; }
     .skeleton-row.short { width: 35%; }
 
-    /* Dev Mode FAB */
-    .dev-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9998; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; }
+    /* Dev Mode FAB — expandable menu */
+    .dev-fab-wrap { position: fixed; bottom: 20px; left: 20px; z-index: 9998; display: flex; flex-direction: column; align-items: center; }
+    .dev-fab { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; position: relative; z-index: 2; }
     .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
     .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
+    .dev-fab-menu { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; opacity: 0; transform: translateY(8px) scale(0.95); pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; }
+    .dev-fab-menu.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .dev-fab-menu button { white-space: nowrap; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.15s ease; }
+    .dev-fab-menu button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+    .dev-fab-menu .seed-btn { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; }
+    .dev-fab-menu .seed-btn:hover { background: #dbeafe; }
+    .dev-fab-menu .wipe-btn { background: #fef2f2; color: #dc2626; border: 1.5px solid #fca5a5; }
+    .dev-fab-menu .wipe-btn:hover { background: #fee2e2; }
   </style>
 </head>
 <body>
@@ -98,9 +107,7 @@
         <a href="contacts.html">Contacts</a>
         <a href="photos.html">Photos</a>
       </div>
-      <button id="wipeBtn" style="display:none;background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(220,38,38,0.4);padding:5px 12px;font-size:13px;font-weight:500;border-radius:8px;cursor:pointer;">Wipe Data</button>
     </div>
-
   </header>
 
   <main>
@@ -157,7 +164,13 @@
   </main>
 
   <div class="toast-container" id="toastContainer"></div>
-  <button id="devFab" class="dev-fab" title="Toggle Dev Mode">&#9881;</button>
+  <div class="dev-fab-wrap">
+    <div class="dev-fab-menu" id="devMenu">
+      <button class="seed-btn" id="seedBtn">Seed Data</button>
+      <button class="wipe-btn" id="wipeBtn">Wipe Data</button>
+    </div>
+    <button id="devFab" class="dev-fab" title="Dev Tools">&#9881;</button>
+  </div>
 
   <script>
     function showToast(message, type = 'success', duration = 4000) {
@@ -361,37 +374,63 @@
     els.createBtn.onclick = createCampaign;
     els.nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') createCampaign(); });
 
-    function confirmWipe() {
+    (async function init() {
+      await loadCampaigns();
+    })();
+
+    // --- Dev FAB: expandable menu ---
+    const devFab = document.getElementById('devFab');
+    const devMenu = document.getElementById('devMenu');
+
+    function toggleDevMenu() {
+      const opening = !devMenu.classList.contains('visible');
+      devMenu.classList.toggle('visible', opening);
+      devFab.classList.toggle('active', opening);
+      localStorage.setItem('devMode', opening ? 'true' : 'false');
+    }
+
+    function closeDevMenu() {
+      devMenu.classList.remove('visible');
+      devFab.classList.remove('active');
+      localStorage.setItem('devMode', 'false');
+    }
+
+    devFab.onclick = toggleDevMenu;
+
+    // Click anywhere outside the FAB wrap to close the menu
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dev-fab-wrap')) closeDevMenu();
+    });
+
+    // Wipe button
+    document.getElementById('wipeBtn').onclick = function() {
       if (!confirm("Are you sure you want to wipe ALL data? This deletes all campaigns, contacts, photos, and send history. This cannot be undone.")) return;
       fetch("/api/wipe", { method: "POST" })
         .then(res => {
           if (!res.ok) return res.text().then(t => { throw new Error(t); });
           window.location.reload();
         })
-        .catch(e => {
-          showToast("Wipe failed: " + e.message, "error");
-        });
-    }
-    document.getElementById('wipeBtn').onclick = confirmWipe;
-
-    (async function init() {
-      await loadCampaigns();
-    })();
-
-    // --- Dev Mode FAB ---
-    function applyDevMode() {
-      const isOn = localStorage.getItem('devMode') === 'true';
-      document.getElementById('wipeBtn').style.display = isOn ? '' : 'none';
-      document.getElementById('devFab').classList.toggle('active', isOn);
-    }
-
-    document.getElementById('devFab').onclick = function() {
-      const isOn = localStorage.getItem('devMode') === 'true';
-      localStorage.setItem('devMode', isOn ? 'false' : 'true');
-      applyDevMode();
+        .catch(e => showToast("Wipe failed: " + e.message, "error"));
     };
 
-    applyDevMode();
+    // Seed button
+    document.getElementById('seedBtn').onclick = function() {
+      if (!confirm("Seed the database with test data? This wipes existing data first, then populates campaigns, contacts, and photos.")) return;
+      showToast("Seeding data… this may take a moment.", "info");
+      fetch("/api/seed", { method: "POST" })
+        .then(res => {
+          if (!res.ok) return res.text().then(t => { throw new Error(t); });
+          showToast("Seed complete! Reloading…", "success");
+          setTimeout(() => window.location.reload(), 800);
+        })
+        .catch(e => showToast("Seed failed: " + e.message, "error"));
+    };
+
+    // Restore menu state from localStorage on page load
+    if (localStorage.getItem('devMode') === 'true') {
+      devMenu.classList.add('visible');
+      devFab.classList.add('active');
+    }
   </script>
 </body>
 </html>

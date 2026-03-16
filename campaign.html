@@ -170,10 +170,19 @@
     .share-bar button { white-space: nowrap; font-size: 12px; padding: 5px 12px; }
     .share-bar .share-label { font-size: 11px; font-weight: 600; color: #6366f1; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
 
-    /* Dev Mode FAB */
-    .dev-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9998; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; }
+    /* Dev Mode FAB — expandable menu */
+    .dev-fab-wrap { position: fixed; bottom: 20px; left: 20px; z-index: 9998; display: flex; flex-direction: column; align-items: center; }
+    .dev-fab { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; position: relative; z-index: 2; }
     .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
     .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
+    .dev-fab-menu { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; opacity: 0; transform: translateY(8px) scale(0.95); pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease; }
+    .dev-fab-menu.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .dev-fab-menu button { white-space: nowrap; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer; border: none; font-family: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.15s ease; }
+    .dev-fab-menu button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.18); }
+    .dev-fab-menu .seed-btn { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; }
+    .dev-fab-menu .seed-btn:hover { background: #dbeafe; }
+    .dev-fab-menu .wipe-btn { background: #fef2f2; color: #dc2626; border: 1.5px solid #fca5a5; }
+    .dev-fab-menu .wipe-btn:hover { background: #fee2e2; }
 
     /* Select mode */
     .photo-card { position: relative; }
@@ -217,7 +226,7 @@
     .select-bar #cancelSelectBtn { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .select-bar #cancelSelectBtn:hover { background: #e2e8f0; }
 
-    body.select-mode .dev-fab { bottom: 72px; }
+    body.select-mode .dev-fab-wrap { bottom: 72px; }
 
     @media (max-width: 600px) {
       .select-bar { padding: 10px 12px; }
@@ -380,7 +389,13 @@
     </div>
   </div>
 
-  <button id="devFab" class="dev-fab" title="Toggle Dev Mode">&#9881;</button>
+  <div class="dev-fab-wrap" id="devFabWrap">
+    <div class="dev-fab-menu" id="devMenu">
+      <button class="seed-btn" id="seedBtn">Seed Data</button>
+      <button class="wipe-btn" id="wipeBtn">Wipe Data</button>
+    </div>
+    <button id="devFab" class="dev-fab" title="Dev Tools">&#9881;</button>
+  </div>
 
   <div class="lightbox-overlay" id="lightbox">
     <button class="lightbox-close" id="lightboxClose">&times;</button>
@@ -1230,20 +1245,67 @@
       await refreshAll();
     })();
 
-    // --- Dev Mode FAB ---
-    function applyDevMode() {
-      const isOn = localStorage.getItem('devMode') === 'true';
-      document.getElementById('devSection').style.display = isOn ? '' : 'none';
-      document.getElementById('devFab').classList.toggle('active', isOn);
+    // --- Dev FAB: expandable menu ---
+    const devFab = document.getElementById('devFab');
+    const devMenu = document.getElementById('devMenu');
+
+    function isDevOpen() {
+      return devMenu.classList.contains('visible');
     }
 
-    document.getElementById('devFab').onclick = function() {
-      const isOn = localStorage.getItem('devMode') === 'true';
-      localStorage.setItem('devMode', isOn ? 'false' : 'true');
-      applyDevMode();
+    function toggleDevMenu() {
+      const opening = !isDevOpen();
+      devMenu.classList.toggle('visible', opening);
+      devFab.classList.toggle('active', opening);
+      // Show/hide the simulate inbound section along with the menu
+      document.getElementById('devSection').style.display = opening ? '' : 'none';
+      localStorage.setItem('devMode', opening ? 'true' : 'false');
+    }
+
+    function closeDevMenu() {
+      devMenu.classList.remove('visible');
+      devFab.classList.remove('active');
+      document.getElementById('devSection').style.display = 'none';
+      localStorage.setItem('devMode', 'false');
+    }
+
+    devFab.onclick = toggleDevMenu;
+
+    // Click anywhere outside the FAB wrap to close the menu
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dev-fab-wrap') && !e.target.closest('#devSection')) closeDevMenu();
+    });
+
+    // Wipe button
+    document.getElementById('wipeBtn').onclick = function() {
+      if (!confirm("Are you sure you want to wipe ALL data? This deletes all campaigns, contacts, photos, and send history. This cannot be undone.")) return;
+      fetch("/api/wipe", { method: "POST" })
+        .then(res => {
+          if (!res.ok) return res.text().then(t => { throw new Error(t); });
+          window.location.href = 'dashboard.html';
+        })
+        .catch(e => showToast("Wipe failed: " + e.message, "error"));
     };
 
-    applyDevMode();
+    // Seed button
+    document.getElementById('seedBtn').onclick = function() {
+      if (!confirm("Seed the database with test data? This wipes existing data first, then populates campaigns, contacts, and photos.")) return;
+      showToast("Seeding data… this may take a moment.", "info");
+      fetch("/api/seed", { method: "POST" })
+        .then(res => {
+          if (!res.ok) return res.text().then(t => { throw new Error(t); });
+          showToast("Seed complete! Redirecting…", "success");
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+        })
+        .catch(e => showToast("Seed failed: " + e.message, "error"));
+    };
+
+    // Restore menu state from localStorage on page load
+    if (localStorage.getItem('devMode') === 'true') {
+      devMenu.classList.add('visible');
+      devFab.classList.add('active');
+      document.getElementById('devSection').style.display = '';
+    }
   </script>
 </body>
 </html>
