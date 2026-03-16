@@ -17,6 +17,7 @@ const {
   getCredentials
 } = require("./googleDrive");
 const { db, stmts } = require("./db");
+const { seed } = require("./seed");
 
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
@@ -114,6 +115,17 @@ app.post("/api/wipe", requireAuth, (req, res) => {
   }
 });
 
+// Seed test data (admin only — runs the same seed.js script used from the CLI)
+app.post("/api/seed", requireAuth, async (req, res) => {
+  try {
+    await seed();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Seed failed:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Public files — login page, Twilio webhook, health check, and static assets
 // These are served WITHOUT auth so the login page itself can load
 app.use("/login.html", express.static(path.join(__dirname, "login.html")));
@@ -130,12 +142,17 @@ app.get("/api/gallery/:token", (req, res) => {
   const photos = stmts.getPhotosByCampaign.all(campaign.id);
   res.json({
     name: campaign.name,
-    photos: photos.map(p => ({
-      id: p.id,
-      filename: p.filename,
-      createdAt: p.createdAt,
-      url: `/api/gallery/photo/${p.id}`
-    }))
+    photos: photos.map(p => {
+      const contact = p.contactId ? stmts.getContactById.get(p.contactId) : null;
+      const senderName = contact?.name ? contact.name.split(' ')[0] : null;
+      return {
+        id: p.id,
+        filename: p.filename,
+        createdAt: p.createdAt,
+        url: `/api/gallery/photo/${p.id}`,
+        senderName
+      };
+    })
   });
 });
 
@@ -238,6 +255,18 @@ function getTwilioClient() {
 }
 
 async function sendSmsViaTwilio({ to, body }) {
+  // Mock mode: skip real Twilio and return a fake success response
+  if (process.env.MOCK_TWILIO === 'true') {
+    console.log(`[MOCK] SMS → ${to}: ${body.substring(0, 50)}...`);
+    return {
+      sid: 'MOCK_' + crypto.randomBytes(16).toString('hex'),
+      status: 'queued',
+      to,
+      from: process.env.TWILIO_PHONE_NUMBER || '+15550000000',
+      messagingServiceSid: null
+    };
+  }
+
   const client = getTwilioClient();
   if (!client) throw new Error("Missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN");
 
@@ -784,16 +813,21 @@ app.get("/api/photos", (req, res) => {
       phoneNumber: phone === "unknown" ? "" : phone,
       contactId: cId === "none" ? null : cId,
       name: contact ? contact.name : "",
-      photos: arr.map(p => ({
-        id: p.id,
-        filename: p.filename,
-        createdAt: p.createdAt,
-        url: photoUrl(p),
-        contentHash: p.contentHash || null,
-        similarInOtherCampaigns: JSON.parse(p.similarInOtherCampaigns || "[]"),
-        driveFileId: p.driveFileId || null,
-        driveWebViewLink: p.driveWebViewLink || null
-      }))
+      photos: arr.map(p => {
+        const campaign = p.campaignId ? stmts.getCampaignById.get(p.campaignId) : null;
+        return {
+          id: p.id,
+          filename: p.filename,
+          createdAt: p.createdAt,
+          url: photoUrl(p),
+          campaignId: p.campaignId || null,
+          campaignName: campaign ? campaign.name : null,
+          contentHash: p.contentHash || null,
+          similarInOtherCampaigns: JSON.parse(p.similarInOtherCampaigns || "[]"),
+          driveFileId: p.driveFileId || null,
+          driveWebViewLink: p.driveWebViewLink || null,
+        };
+      })
     });
   }
 
