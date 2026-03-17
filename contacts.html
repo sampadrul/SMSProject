@@ -67,6 +67,13 @@
       .toast-container { right: 12px; left: 12px; }
     }
 
+    /* Import dropdown */
+    .import-wrap { position: relative; }
+    .import-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 200px; background: #fff; border-radius: 10px; border: 1.5px solid #e0e7ff; box-shadow: 0 4px 20px rgba(37,99,235,0.12); padding: 4px; opacity: 0; transform: translateY(-6px) scale(0.96); pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 100; }
+    .import-menu.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .import-option { width: 100%; text-align: left; background: none; color: #0f172a; font-weight: 500; border: none; border-radius: 7px; padding: 9px 12px; font-size: 13px; box-shadow: none; }
+    .import-option:hover { background: #eff6ff; color: #1d4ed8; transform: none; box-shadow: none; }
+
     /* Dev Mode FAB */
     .dev-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9998; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; }
     .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
@@ -108,8 +115,16 @@
         </div>
       </div>
 
-      <div style="margin-top:10px;">
+      <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
         <button id="add">Add</button>
+        <div class="import-wrap">
+          <button id="importBtn" class="secondary">Import &#9662;</button>
+          <div class="import-menu" id="importMenu">
+            <button id="importPhone" class="import-option">📱 From Phone Contacts</button>
+            <button id="importCsv" class="import-option">📄 From CSV File</button>
+          </div>
+        </div>
+        <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none;" />
       </div>
 
       <div id="status" class="status"></div>
@@ -270,6 +285,223 @@
     phoneEl.addEventListener('keydown', handleEnter);
 
     load();
+
+    // --- Import Menu ---
+    const importBtn = document.getElementById('importBtn');
+    const importMenu = document.getElementById('importMenu');
+    const importPhoneBtn = document.getElementById('importPhone');
+    const importCsvBtn = document.getElementById('importCsv');
+    const csvFileInput = document.getElementById('csvFileInput');
+
+    // Hide phone import option on desktop (Contact Picker API is mobile-only)
+    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+      importPhoneBtn.style.display = 'none';
+    }
+
+    // Toggle dropdown
+    importBtn.onclick = (e) => {
+      e.stopPropagation();
+      importMenu.classList.toggle('visible');
+    };
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!importMenu.contains(e.target) && e.target !== importBtn) {
+        importMenu.classList.remove('visible');
+      }
+    });
+
+    // --- Bulk Import (shared by phone + CSV) ---
+    async function importContacts(contacts) {
+      if (!contacts || contacts.length === 0) {
+        showToast('No contacts to import.', 'info');
+        return;
+      }
+
+      // Pre-fetch existing contacts to detect duplicates locally
+      const existing = await fetchJSON('/api/global-contacts');
+      const existingPhones = new Set(
+        (existing.contacts || []).map(c => c.phoneNumber)
+      );
+
+      let created = 0, existed = 0, failed = 0, skipped = 0;
+
+      for (const c of contacts) {
+        if (!c.phone) { skipped++; continue; }
+
+        // Normalize phone to digits for comparison
+        const digits = c.phone.replace(/\D/g, '');
+        const normalized = digits.length === 10 ? '+1' + digits
+          : (digits.length === 11 && digits.startsWith('1')) ? '+' + digits
+          : null;
+
+        if (!normalized) { failed++; continue; }
+
+        if (existingPhones.has(normalized)) {
+          existed++;
+          continue;
+        }
+
+        try {
+          await fetchJSON('/api/global-contacts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: c.name, phoneNumber: c.phone })
+          });
+          existingPhones.add(normalized);
+          created++;
+        } catch (e) {
+          failed++;
+        }
+      }
+
+      // Build summary message
+      const parts = [];
+      if (created > 0) parts.push(`Imported ${created} new contact${created !== 1 ? 's' : ''}`);
+      if (existed > 0) parts.push(`${existed} already existed`);
+      if (skipped > 0) parts.push(`${skipped} skipped (no phone)`);
+      if (failed > 0) parts.push(`${failed} failed`);
+
+      const msg = created > 0
+        ? parts[0] + (parts.length > 1 ? ` (${parts.slice(1).join(', ')})` : '')
+        : parts.join(', ') || 'No contacts imported';
+
+      showToast(msg, created > 0 ? 'success' : 'info');
+      await load();
+    }
+
+    // --- Phone Contacts Import ---
+    importPhoneBtn.onclick = async () => {
+      importMenu.classList.remove('visible');
+      try {
+        const results = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+        const contacts = results
+          .filter(r => r.tel && r.tel.length > 0)
+          .map(r => ({
+            name: (r.name && r.name[0]) || 'Unknown',
+            phone: r.tel[0]
+          }));
+        await importContacts(contacts);
+      } catch (e) {
+        if (e.name === 'AbortError') return; // user cancelled
+        showToast('Error accessing contacts: ' + e.message, 'error');
+      }
+    };
+
+    // --- CSV Import ---
+    importCsvBtn.onclick = () => {
+      importMenu.classList.remove('visible');
+      csvFileInput.value = '';
+      csvFileInput.click();
+    };
+
+    function parseCSV(text) {
+      if (!text || !text.trim()) throw new Error('CSV file is empty.');
+
+      // Split a single CSV line respecting quoted fields
+      function splitRow(line) {
+        const fields = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (inQuotes) {
+            if (ch === '"' && line[i + 1] === '"') {
+              current += '"';  // escaped quote
+              i++;
+            } else if (ch === '"') {
+              inQuotes = false;
+            } else {
+              current += ch;
+            }
+          } else {
+            if (ch === '"') {
+              inQuotes = true;
+            } else if (ch === ',') {
+              fields.push(current.trim());
+              current = '';
+            } else {
+              current += ch;
+            }
+          }
+        }
+        fields.push(current.trim());
+        return fields;
+      }
+
+      const lines = text.replace(/\r\n/g, '\n').split('\n').filter(l => l.trim());
+      if (lines.length === 0) throw new Error('CSV file has no data.');
+
+      const firstFields = splitRow(lines[0]);
+
+      // Detect whether the first row is a header
+      const phoneSynonyms = ['phone', 'phone_number', 'phonenumber', 'tel', 'telephone', 'mobile', 'cell'];
+      const nameSynonyms = ['name', 'full_name', 'fullname', 'contact'];
+      const firstSynonyms = ['first_name', 'firstname', 'first'];
+      const lastSynonyms = ['last_name', 'lastname', 'last'];
+
+      const lowerFields = firstFields.map(f => f.toLowerCase().replace(/\s+/g, '_'));
+      const hasPhoneHeader = lowerFields.some(f => phoneSynonyms.includes(f));
+      const hasNameHeader = lowerFields.some(f => nameSynonyms.includes(f));
+      const hasFirstHeader = lowerFields.some(f => firstSynonyms.includes(f));
+      const isHeader = hasPhoneHeader && (hasNameHeader || hasFirstHeader);
+
+      let phoneIdx = -1, nameIdx = -1, firstIdx = -1, lastIdx = -1;
+      let dataStart = 0;
+
+      if (isHeader) {
+        // Map column indices from header names
+        dataStart = 1;
+        lowerFields.forEach((f, i) => {
+          if (phoneSynonyms.includes(f)) phoneIdx = i;
+          if (nameSynonyms.includes(f)) nameIdx = i;
+          if (firstSynonyms.includes(f)) firstIdx = i;
+          if (lastSynonyms.includes(f)) lastIdx = i;
+        });
+      } else {
+        // Headerless: guess by column count
+        const cols = firstFields.length;
+        if (cols === 2) {
+          nameIdx = 0; phoneIdx = 1;
+        } else if (cols >= 3) {
+          firstIdx = 0; lastIdx = 1; phoneIdx = 2;
+        } else {
+          throw new Error('Cannot parse CSV: expected at least 2 columns (name, phone).');
+        }
+      }
+
+      const contacts = [];
+      for (let i = dataStart; i < lines.length; i++) {
+        const fields = splitRow(lines[i]);
+        const phone = fields[phoneIdx] || '';
+        let name = '';
+        if (nameIdx >= 0) {
+          name = fields[nameIdx] || '';
+        } else if (firstIdx >= 0) {
+          const first = fields[firstIdx] || '';
+          const last = (lastIdx >= 0 ? fields[lastIdx] : '') || '';
+          name = (first + ' ' + last).trim();
+        }
+        if (!name && !phone) continue;  // skip blank rows
+        contacts.push({ name: name || 'Unknown', phone });
+      }
+
+      if (contacts.length === 0) throw new Error('No contacts found in CSV file.');
+      return contacts;
+    }
+
+    csvFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const contacts = parseCSV(text);
+        await importContacts(contacts);
+      } catch (err) {
+        showToast(err.message || 'Failed to parse CSV file.', 'error');
+      }
+    });
 
     // --- Dev Mode FAB ---
     function applyDevMode() {
