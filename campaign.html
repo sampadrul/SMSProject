@@ -223,6 +223,8 @@
     .select-bar #saveSelectedBtn { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; box-shadow: 0 1px 3px rgba(37,99,235,0.3); }
     .select-bar #saveSelectedBtn:hover:not(:disabled) { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
     .select-bar #saveSelectedBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .select-bar #downloadAllBtn { background: #f0f4ff; color: #2563eb; border: 1px solid #c7d7fe; }
+    .select-bar #downloadAllBtn:hover { background: #dbeafe; }
     .select-bar #cancelSelectBtn { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
     .select-bar #cancelSelectBtn:hover { background: #e2e8f0; }
 
@@ -240,6 +242,8 @@
     .gallery-send-section textarea { min-height: 60px; }
     button.close-campaign { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 1px 3px rgba(220,38,38,0.3); margin-top: 16px; }
     button.close-campaign:hover:not(:disabled) { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
+    .drive-link { font-size: 11px; color: #2563eb; text-decoration: none; font-weight: 500; }
+    .drive-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -256,7 +260,6 @@
       <a href="dashboard.html" class="active">Campaigns</a>
       <a href="contacts.html">Contacts</a>
       <a href="photos.html">Photos</a>
-      <button id="selectToggle" style="display:none;color:#bfdbfe;font-size:13px;font-weight:500;padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.1);cursor:pointer;font-family:inherit;box-shadow:none;transform:none;">Select</button>
     </div>
   </header>
 
@@ -358,7 +361,10 @@
 
     <!-- Photos — full width, visible in manage mode only -->
     <section id="photosSection" style="display:none;">
-      <h2>Photos by Sender</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <h2>Photos by Sender</h2>
+        <button id="selectToggle" class="secondary" style="display:none;font-size:12px;padding:5px 14px;">Select</button>
+      </div>
       <p class="subtle">Photos received for contacts in this campaign.</p>
       <div id="shareBar" class="share-bar" style="display:none;">
         <span class="share-label">Gallery Link</span>
@@ -383,6 +389,7 @@
   <div class="select-bar" id="selectBar">
     <span id="selectInfo">0 selected</span>
     <div>
+      <button id="downloadAllBtn">Download All</button>
       <button id="selectAllBtn">Select All</button>
       <button id="saveSelectedBtn" disabled>Save</button>
       <button id="cancelSelectBtn">Cancel</button>
@@ -552,6 +559,49 @@
     }
 
     document.getElementById('saveSelectedBtn').onclick = saveSelectedPhotos;
+
+    async function downloadAllPhotos() {
+      const allCards = document.querySelectorAll('.photo-card');
+      if (allCards.length === 0) return;
+
+      const btn = document.getElementById('downloadAllBtn');
+      btn.disabled = true;
+      showToast(`Preparing ${allCards.length} photo${allCards.length > 1 ? 's' : ''}…`, 'info');
+
+      try {
+        const files = [];
+        for (const card of allCards) {
+          const res = await fetch(card.dataset.photoUrl);
+          const blob = await res.blob();
+          files.push(new File([blob], card.dataset.photoFilename, { type: blob.type || 'image/jpeg' }));
+        }
+
+        if (navigator.canShare && navigator.canShare({ files })) {
+          await navigator.share({ files });
+          showToast(`Shared ${files.length} photo${files.length > 1 ? 's' : ''}!`, 'success');
+        } else {
+          for (const file of files) {
+            const blobUrl = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+          }
+          showToast(`Downloaded ${files.length} photo${files.length > 1 ? 's' : ''}!`, 'success');
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          showToast('Failed to download photos: ' + err.message, 'error');
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('downloadAllBtn').onclick = downloadAllPhotos;
 
     const campaignId = new URLSearchParams(window.location.search).get("id");
     if (!campaignId) showToast("No campaign id provided in URL (expected ?id=...)", "error");
@@ -761,6 +811,21 @@
       state.campaign = data.campaign;
 
       els.campaignName.textContent = state.campaign.name;
+      // Add "Open in Drive" link next to campaign name if a Drive folder exists
+      const oldDriveLink = document.getElementById('campaignDriveLink');
+      if (oldDriveLink) oldDriveLink.remove();
+      if (state.campaign.driveFolderId) {
+        const driveLink = document.createElement('a');
+        driveLink.id = 'campaignDriveLink';
+        driveLink.className = 'drive-link';
+        driveLink.href = `https://drive.google.com/drive/folders/${state.campaign.driveFolderId}`;
+        driveLink.target = '_blank';
+        driveLink.rel = 'noopener';
+        driveLink.textContent = 'Open in Drive \u2197';
+        driveLink.style.marginLeft = '10px';
+        driveLink.style.fontSize = '13px';
+        els.campaignName.appendChild(driveLink);
+      }
       els.campaignMeta.textContent =
         `Contacts: ${state.campaign.contactCount} · Photos: ${state.campaign.responseCount} · Updated: ${fmt(state.campaign.lastUpdated)}`;
 
@@ -1070,6 +1135,17 @@
           dt.className = "small-text";
           dt.textContent = fmt(p.createdAt);
           meta.appendChild(dt);
+
+          if (p.driveWebViewLink) {
+            const driveLink = document.createElement("a");
+            driveLink.className = "drive-link";
+            driveLink.href = p.driveWebViewLink;
+            driveLink.target = "_blank";
+            driveLink.rel = "noopener";
+            driveLink.textContent = "View in Drive \u2197";
+            driveLink.onclick = function(e) { e.stopPropagation(); };
+            meta.appendChild(driveLink);
+          }
 
           if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
             const badge = document.createElement("div");
