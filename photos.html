@@ -74,6 +74,8 @@
     .dev-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9998; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; border: 1.5px solid #c7d7fe; background: #f8faff; color: #94a3b8; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: all 0.2s ease; padding: 0; }
     .dev-fab:hover { border-color: #93c5fd; color: #64748b; }
     .dev-fab.active { background: #2563eb; color: #fff; border-color: #2563eb; box-shadow: 0 2px 8px rgba(37,99,235,0.4); }
+    .drive-link { font-size: 11px; color: #2563eb; text-decoration: none; font-weight: 500; }
+    .drive-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -261,6 +263,16 @@
               line2.textContent = "Not assigned to a campaign";
             }
             meta.appendChild(line2);
+
+            if (p.driveWebViewLink) {
+              const driveLink = document.createElement("a");
+              driveLink.className = "drive-link";
+              driveLink.href = p.driveWebViewLink;
+              driveLink.target = "_blank";
+              driveLink.rel = "noopener";
+              driveLink.textContent = "View in Drive \u2197";
+              meta.appendChild(driveLink);
+            }
 
             if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
               const reuse = document.createElement("div");

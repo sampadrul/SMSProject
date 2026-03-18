@@ -5,59 +5,145 @@
   <title>Photo Gallery</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
-    header { background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%); color: #fff; padding: 18px 28px; text-align: center; box-shadow: 0 2px 12px rgba(37,99,235,0.25); }
-    header .label { font-size: 12px; font-weight: 500; color: #bfdbfe; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-    header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-    main { max-width: 1000px; margin: 28px auto; padding: 0 20px 48px; }
-    .photo-count { text-align: center; font-size: 13px; color: #64748b; margin-bottom: 20px; }
-    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
-    .photo-card { background: #fff; border: 1.5px solid #e0e7ff; border-radius: 12px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; cursor: pointer; }
-    @media (hover: hover) {
-      .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+      color: #fff; padding: 36px 28px 32px; text-align: center;
+      box-shadow: 0 4px 24px rgba(37,99,235,0.3);
     }
-    .photo-card img { width: 100%; height: 200px; object-fit: cover; display: block; -webkit-touch-callout: none; }
-    .photo-meta { padding: 6px 10px 8px; font-size: 11px; color: #64748b; }
-    .empty { text-align: center; padding: 60px 20px; }
-    .empty-icon { font-size: 40px; margin-bottom: 8px; }
-    .empty-text { font-size: 15px; color: #64748b; }
-    .error { text-align: center; padding: 60px 20px; color: #dc2626; }
+    header h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+    .photo-pill {
+      display: inline-block; margin-top: 10px; padding: 4px 14px;
+      background: rgba(255,255,255,0.18); border-radius: 100px;
+      font-size: 13px; font-weight: 500; color: #dbeafe; backdrop-filter: blur(4px);
+    }
 
-    /* Lightbox */
-    .lightbox-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; flex-direction: column; }
-    .lightbox-overlay.active { display: flex; animation: lightboxIn 0.2s ease; }
-    @keyframes lightboxIn { from { opacity: 0; } to { opacity: 1; } }
-    .lightbox-overlay img { max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 8px; }
-    .lightbox-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.15s; padding: 0; box-shadow: none; }
-    .lightbox-close:hover { background: rgba(255,255,255,0.15); }
+    /* ── Main ────────────────────────────────── */
+    main { max-width: 1060px; margin: 28px auto; padding: 0 20px 48px; }
 
-    /* Loading skeleton */
+    /* ── Photo grid ──────────────────────────── */
+    .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+    .photo-card {
+      position: relative; background: #fff; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: box-shadow 0.2s, transform 0.2s; cursor: pointer;
+    }
+    @media (hover: hover) {
+      .photo-card:hover { box-shadow: 0 8px 28px rgba(37,99,235,0.18); transform: translateY(-3px); }
+      .photo-card:hover .card-download { opacity: 1; }
+    }
+    .photo-card img { width: 100%; height: 240px; object-fit: cover; display: block; -webkit-touch-callout: none; }
+
+    /* Sender name overlay (bottom-left of image) */
+    .card-sender {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 24px 12px 8px; font-size: 12px; font-weight: 600; color: #fff;
+      background: linear-gradient(transparent, rgba(0,0,0,0.55));
+      pointer-events: none;
+    }
+    .card-date {
+      display: block; font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.75); margin-top: 1px;
+    }
+
+    /* Download button (top-right of image) */
+    .card-download {
+      position: absolute; top: 8px; right: 8px; width: 36px; height: 36px;
+      background: rgba(0,0,0,0.45); border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; color: #fff;
+      text-decoration: none; transition: background 0.15s, opacity 0.15s; opacity: 0;
+      backdrop-filter: blur(4px);
+    }
+    .card-download:hover { background: rgba(0,0,0,0.7); }
+    .card-download svg { width: 18px; height: 18px; }
+
+    /* On touch devices, always show download button */
+    @media (hover: none) { .card-download { opacity: 1; } }
+
+    /* ── Empty & error states ────────────────── */
+    .empty { text-align: center; padding: 80px 20px; }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 6px; }
+    .empty-text { font-size: 14px; color: #64748b; }
+    .error { text-align: center; padding: 80px 20px; color: #dc2626; font-size: 15px; }
+
+    /* ── Lightbox ─────────────────────────────── */
+    .lightbox-overlay {
+      display: none; position: fixed; inset: 0; z-index: 10000;
+      background: rgba(0,0,0,0.92); flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .lightbox-overlay.active { display: flex; animation: lbIn 0.2s ease; }
+    @keyframes lbIn { from { opacity: 0; } to { opacity: 1; } }
+    .lightbox-overlay img#lightboxImg {
+      max-width: 88vw; max-height: 78vh; object-fit: contain; border-radius: 8px;
+      user-select: none; -webkit-user-drag: none;
+    }
+    .lightbox-caption {
+      color: #e2e8f0; font-size: 14px; margin-top: 12px; text-align: center;
+      max-width: 80vw; line-height: 1.4;
+    }
+    .lightbox-caption .caption-name { font-weight: 600; color: #fff; }
+    .lightbox-caption .caption-date { color: #94a3b8; margin-left: 8px; font-size: 13px; }
+    .lightbox-close {
+      position: absolute; top: 16px; right: 20px; background: none; border: none;
+      color: #fff; font-size: 32px; cursor: pointer; width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; transition: background 0.15s; padding: 0;
+    }
+    .lightbox-close:hover { background: rgba(255,255,255,0.12); }
+
+    /* Prev / Next arrows */
+    .lightbox-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.1); border: none; color: #fff;
+      width: 48px; height: 48px; border-radius: 50%; font-size: 24px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; backdrop-filter: blur(4px);
+    }
+    .lightbox-arrow:hover { background: rgba(255,255,255,0.25); }
+    .lightbox-arrow.prev { left: 16px; }
+    .lightbox-arrow.next { right: 16px; }
+    .lightbox-arrow.hidden { display: none; }
+
+    /* ── Loading skeleton ────────────────────── */
     .skeleton { background: linear-gradient(90deg, #e0e7ff 25%, #eef2ff 50%, #e0e7ff 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    .skeleton-card { height: 200px; border-radius: 12px; }
-    .skeleton-bar { height: 24px; width: 260px; margin: 0 auto 20px; }
+    .skeleton-card { height: 240px; border-radius: 14px; }
+    .skeleton-bar { height: 28px; width: 260px; margin: 0 auto; }
+    .skeleton-pill { height: 26px; width: 80px; margin: 10px auto 0; border-radius: 100px; }
 
+    /* ── Mobile ───────────────────────────────── */
     @media (max-width: 600px) {
-      header { padding: 14px 16px; }
-      header h1 { font-size: 18px; }
-      main { padding: 0 12px 32px; margin-top: 16px; }
-      .photo-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-      .photo-card img { height: 150px; }
+      header { padding: 28px 16px 24px; }
+      header h1 { font-size: 22px; }
+      main { padding: 0 10px 32px; margin-top: 16px; }
+      .photo-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .photo-card img { height: 180px; }
+      .card-sender { padding: 20px 8px 6px; font-size: 11px; }
+      .card-date { font-size: 10px; }
+      .card-download { width: 32px; height: 32px; top: 6px; right: 6px; }
+      .card-download svg { width: 16px; height: 16px; }
+      .lightbox-arrow { width: 40px; height: 40px; font-size: 20px; }
+      .lightbox-arrow.prev { left: 8px; }
+      .lightbox-arrow.next { right: 8px; }
+      .lightbox-overlay img#lightboxImg { max-width: 95vw; max-height: 70vh; }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="label">Photo Gallery</div>
     <h1 id="galleryName"><span class="skeleton skeleton-bar" style="display:inline-block;">&nbsp;</span></h1>
+    <div id="headerPill"><div class="skeleton skeleton-pill">&nbsp;</div></div>
   </header>
 
   <main>
     <div id="content">
-      <div class="photo-count skeleton skeleton-bar">&nbsp;</div>
       <div class="photo-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
         <div class="skeleton skeleton-card"></div>
         <div class="skeleton skeleton-card"></div>
         <div class="skeleton skeleton-card"></div>
@@ -68,31 +154,81 @@
 
   <div class="lightbox-overlay" id="lightbox">
     <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <button class="lightbox-arrow prev" id="lbPrev">&#8249;</button>
+    <button class="lightbox-arrow next" id="lbNext">&#8250;</button>
     <img id="lightboxImg" src="" alt="" />
+    <div class="lightbox-caption" id="lightboxCaption"></div>
   </div>
 
   <script>
     const token = new URLSearchParams(window.location.search).get("token");
+    let photos = [];       // populated after fetch
+    let currentIndex = -1; // which photo is open in lightbox
 
-    function openLightbox(src) {
-      document.getElementById('lightboxImg').src = src;
+    /* ── Lightbox ─────────────────────────── */
+    function openLightbox(index) {
+      if (index < 0 || index >= photos.length) return;
+      currentIndex = index;
+      const p = photos[index];
+      document.getElementById('lightboxImg').src = p.url;
+      // Build caption
+      const date = new Date(p.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      let caption = '';
+      if (p.senderName) caption += `<span class="caption-name">${p.senderName}</span>`;
+      caption += `<span class="caption-date">${date}</span>`;
+      document.getElementById('lightboxCaption').innerHTML = caption;
+      // Arrow visibility
+      document.getElementById('lbPrev').classList.toggle('hidden', index === 0);
+      document.getElementById('lbNext').classList.toggle('hidden', index === photos.length - 1);
       document.getElementById('lightbox').classList.add('active');
     }
     function closeLightbox() {
       document.getElementById('lightbox').classList.remove('active');
       document.getElementById('lightboxImg').src = '';
+      currentIndex = -1;
     }
+    function navLightbox(dir) {
+      const next = currentIndex + dir;
+      if (next >= 0 && next < photos.length) openLightbox(next);
+    }
+
     document.getElementById('lightboxClose').onclick = closeLightbox;
+    document.getElementById('lbPrev').onclick = function(e) { e.stopPropagation(); navLightbox(-1); };
+    document.getElementById('lbNext').onclick = function(e) { e.stopPropagation(); navLightbox(1); };
     document.getElementById('lightbox').onclick = function(e) {
       if (e.target === this) closeLightbox();
     };
+
+    // Keyboard navigation
     document.addEventListener('keydown', function(e) {
+      if (currentIndex === -1) return;
       if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') navLightbox(-1);
+      if (e.key === 'ArrowRight') navLightbox(1);
     });
 
+    // Touch swipe support
+    let touchStartX = 0;
+    const lightboxEl = document.getElementById('lightbox');
+    lightboxEl.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    lightboxEl.addEventListener('touchend', function(e) {
+      const delta = e.changedTouches[0].screenX - touchStartX;
+      if (Math.abs(delta) > 50) {
+        // Swiped left = next, swiped right = prev
+        navLightbox(delta > 0 ? -1 : 1);
+      }
+    }, { passive: true });
+
+    // Download icon SVG (reused in card rendering)
+    const downloadSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+
+    /* ── Load gallery ─────────────────────── */
     async function loadGallery() {
       if (!token) {
         document.getElementById('galleryName').textContent = 'Gallery';
+        document.getElementById('headerPill').innerHTML = '';
         document.getElementById('content').innerHTML = '<div class="error">No gallery token provided.</div>';
         return;
       }
@@ -101,6 +237,7 @@
         const res = await fetch(`/api/gallery/${encodeURIComponent(token)}`);
         if (!res.ok) {
           document.getElementById('galleryName').textContent = 'Gallery';
+          document.getElementById('headerPill').innerHTML = '';
           document.getElementById('content').innerHTML = '<div class="error">Gallery not found. The link may be invalid or expired.</div>';
           return;
         }
@@ -110,29 +247,47 @@
         document.getElementById('galleryName').textContent = data.name;
 
         if (!data.photos || data.photos.length === 0) {
+          document.getElementById('headerPill').innerHTML = '';
           document.getElementById('content').innerHTML =
-            '<div class="empty"><div class="empty-icon">📸</div><div class="empty-text">No photos yet. Check back soon!</div></div>';
+            '<div class="empty"><div class="empty-icon">📷</div><div class="empty-title">No photos yet</div><div class="empty-text">Photos will appear here once they start coming in.</div></div>';
           return;
         }
 
         // Sort newest first
         data.photos.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        photos = data.photos;
 
-        let html = `<div class="photo-count">${data.photos.length} photo${data.photos.length === 1 ? '' : 's'}</div>`;
-        html += '<div class="photo-grid">';
-        for (const p of data.photos) {
-          const date = new Date(p.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        // Photo count pill in header
+        const count = photos.length;
+        document.getElementById('headerPill').innerHTML =
+          `<span class="photo-pill">${count} photo${count === 1 ? '' : 's'}</span>`;
+
+        // Render grid
+        let html = '<div class="photo-grid">';
+        photos.forEach((p, i) => {
+          const date = new Date(p.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
           html += `
-            <div class="photo-card" onclick="openLightbox('${p.url}')">
-              <img src="${p.url}" alt="${p.filename}" loading="lazy" onclick="openLightbox('${p.url}')" />
-              <div class="photo-meta">${date}</div>
+            <div class="photo-card" data-index="${i}">
+              <img src="${p.url}" alt="${p.filename || 'Photo'}" loading="lazy" />
+              <a class="card-download" href="${p.url}" download="${p.filename || 'photo.jpg'}" title="Download" onclick="event.stopPropagation()">${downloadSVG}</a>
+              <div class="card-sender">
+                ${p.senderName ? `${p.senderName} &middot; ` : ''}${date}
+              </div>
             </div>`;
-        }
+        });
         html += '</div>';
         document.getElementById('content').innerHTML = html;
 
+        // Attach click handlers via delegation (not inline onclick)
+        document.querySelector('.photo-grid').addEventListener('click', function(e) {
+          const card = e.target.closest('.photo-card');
+          if (!card || e.target.closest('.card-download')) return;
+          openLightbox(parseInt(card.dataset.index, 10));
+        });
+
       } catch (err) {
         document.getElementById('galleryName').textContent = 'Gallery';
+        document.getElementById('headerPill').innerHTML = '';
         document.getElementById('content').innerHTML = '<div class="error">Something went wrong loading this gallery.</div>';
       }
     }
