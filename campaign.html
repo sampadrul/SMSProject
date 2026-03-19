@@ -252,6 +252,8 @@
     button.close-campaign:hover:not(:disabled) { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
     .drive-link { font-size: 11px; color: #2563eb; text-decoration: none; font-weight: 500; }
     .drive-link:hover { text-decoration: underline; }
+    .drive-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; background: #fff; border: 1.5px solid #c7d7fe; color: #1d4ed8; font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.15s; font-family: inherit; }
+    .drive-btn:hover { background: #eff6ff; border-color: #93c5fd; }
   </style>
 </head>
 <body>
@@ -281,7 +283,13 @@
     <!-- Campaign status bar — full width, manage mode only -->
     <section id="statusBar" class="campaign-status-bar" style="display:none;">
       <div class="status-bar-header">
-        <div class="status-badge active" id="statusBadge">● Active</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="status-badge active" id="statusBadge">● Active</div>
+          <a id="campaignDriveBtn" class="drive-btn" style="display:none;" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
+            Open in Drive
+          </a>
+        </div>
         <button class="close-campaign" id="closeCampaignBtn">Close Campaign</button>
       </div>
       <div class="locked-msg-pill" id="statusBarMessage">
@@ -825,20 +833,15 @@
       state.campaign = data.campaign;
 
       els.campaignName.textContent = state.campaign.name;
-      // Add "Open in Drive" link next to campaign name if a Drive folder exists
-      const oldDriveLink = document.getElementById('campaignDriveLink');
-      if (oldDriveLink) oldDriveLink.remove();
-      if (state.campaign.driveFolderId) {
-        const driveLink = document.createElement('a');
-        driveLink.id = 'campaignDriveLink';
-        driveLink.className = 'drive-link';
-        driveLink.href = `https://drive.google.com/drive/folders/${state.campaign.driveFolderId}`;
-        driveLink.target = '_blank';
-        driveLink.rel = 'noopener';
-        driveLink.textContent = 'Open in Drive \u2197';
-        driveLink.style.marginLeft = '10px';
-        driveLink.style.fontSize = '13px';
-        els.campaignName.appendChild(driveLink);
+      // Show Drive button in status bar if a Drive folder exists
+      const driveBtn = document.getElementById('campaignDriveBtn');
+      if (driveBtn) {
+        if (state.campaign.driveFolderId) {
+          driveBtn.href = `https://drive.google.com/drive/folders/${state.campaign.driveFolderId}`;
+          driveBtn.style.display = '';
+        } else {
+          driveBtn.style.display = 'none';
+        }
       }
       els.campaignMeta.textContent =
         `Contacts: ${state.campaign.contactCount} · Photos: ${state.campaign.responseCount} · Updated: ${fmt(state.campaign.lastUpdated)}`;

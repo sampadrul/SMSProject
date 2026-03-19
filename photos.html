@@ -34,11 +34,12 @@
     .photo-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; }
     .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
     .photo-card img { width: 100%; height: 140px; object-fit: cover; display: block; }
-    .photo-meta { padding: 5px 7px 7px; font-size: 11px; }
-    .photo-meta-top { display: flex; justify-content: space-between; gap: 4px; }
-    .link { color: #2563eb; text-decoration: none; font-size: 11px; font-weight: 500; }
-    .link:hover { text-decoration: underline; }
-    .reuse { margin-top: 4px; padding: 2px 6px; border-radius: 6px; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; display: inline-block; font-size: 11px; }
+    .photo-meta { padding: 6px 8px 7px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+    .photo-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+    .photo-date { font-size: 10px; color: #94a3b8; }
+    .campaign-tag { font-size: 10px; font-weight: 600; color: #1d4ed8; background: #eff6ff; border: 1px solid #c7d7fe; border-radius: 5px; padding: 1px 6px; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: inline-block; }
+    .campaign-tag:hover { background: #dbeafe; }
+    .reuse { padding: 1px 6px; border-radius: 5px; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; font-size: 10px; font-weight: 600; white-space: nowrap; }
     @media (max-width: 600px) {
       .header-inner { flex-wrap: wrap; padding: 12px 16px; gap: 8px; }
       .brand-name { display: none; }
@@ -252,51 +253,46 @@
             const meta = document.createElement("div");
             meta.className = "photo-meta";
 
-            const top = document.createElement("div");
-            top.className = "photo-meta-top";
-            top.innerHTML = `
-              <div>${p.filename}</div>
-              <div class="small">${fmt(p.createdAt)}</div>
-            `;
-            meta.appendChild(top);
-
-            const line2 = document.createElement("div");
-            line2.className = "small";
-            if (p.campaignId && p.campaignName) {
-              line2.innerHTML = `
-                From campaign:
-                <a class="link" href="campaign.html?id=${encodeURIComponent(p.campaignId)}">
-                  ${p.campaignName}
-                </a>
-              `;
-            } else if (p.campaignId) {
-              line2.innerHTML = `
-                From campaign:
-                <a class="link" href="campaign.html?id=${encodeURIComponent(p.campaignId)}">
-                  (no name)
-                </a>
-              `;
-            } else {
-              line2.textContent = "Not assigned to a campaign";
-            }
-            meta.appendChild(line2);
-
+            // Row 1: date + drive link
+            const row1 = document.createElement("div");
+            row1.className = "photo-meta-row";
+            const dateEl = document.createElement("span");
+            dateEl.className = "photo-date";
+            dateEl.textContent = fmt(p.createdAt);
+            row1.appendChild(dateEl);
             if (p.driveWebViewLink) {
               const driveLink = document.createElement("a");
               driveLink.className = "drive-link";
               driveLink.href = p.driveWebViewLink;
               driveLink.target = "_blank";
               driveLink.rel = "noopener";
-              driveLink.textContent = "View in Drive \u2197";
-              meta.appendChild(driveLink);
+              driveLink.textContent = "↗ Drive";
+              row1.appendChild(driveLink);
             }
+            meta.appendChild(row1);
 
-            if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
-              const reuse = document.createElement("div");
-              reuse.className = "reuse";
-              reuse.textContent = `⚠ Also used in ${p.similarInOtherCampaigns.length} other campaign(s)`;
-              meta.appendChild(reuse);
+            // Row 2: campaign tag + reuse badge
+            const row2 = document.createElement("div");
+            row2.className = "photo-meta-row";
+            if (p.campaignId) {
+              const tag = document.createElement("a");
+              tag.className = "campaign-tag";
+              tag.href = `campaign.html?id=${encodeURIComponent(p.campaignId)}`;
+              tag.textContent = p.campaignName || "(no name)";
+              row2.appendChild(tag);
+            } else {
+              const nocamp = document.createElement("span");
+              nocamp.className = "photo-date";
+              nocamp.textContent = "No campaign";
+              row2.appendChild(nocamp);
             }
+            if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
+              const reuse = document.createElement("span");
+              reuse.className = "reuse";
+              reuse.textContent = `+${p.similarInOtherCampaigns.length} more`;
+              row2.appendChild(reuse);
+            }
+            meta.appendChild(row2);
 
             card.appendChild(meta);
             grid.appendChild(card);
