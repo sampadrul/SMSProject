@@ -253,6 +253,8 @@
     .gallery-send-section textarea { min-height: 60px; }
     button.close-campaign { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 1px 3px rgba(220,38,38,0.3); margin-top: 16px; }
     button.close-campaign:hover:not(:disabled) { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 12px rgba(220,38,38,0.4); }
+    button.delete-campaign { background: none; border: 1.5px solid #fca5a5; color: #dc2626; box-shadow: none; font-size: 12px; padding: 5px 12px; }
+    button.delete-campaign:hover:not(:disabled) { background: #fef2f2; border-color: #f87171; transform: none; box-shadow: none; }
     .drive-link { font-size: 11px; color: #2563eb; text-decoration: none; font-weight: 500; }
     .drive-link:hover { text-decoration: underline; }
     .drive-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; background: #fff; border: 1.5px solid #c7d7fe; color: #1d4ed8; font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.15s; font-family: inherit; }
@@ -357,8 +359,9 @@
         <div style="margin-bottom:8px;">
           <div class="small" id="reviewSummary"></div>
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
           <button id="sendBtn">Send</button>
+          <button id="deleteCampaignBtn" class="delete-campaign" style="display:none;">Delete Campaign</button>
         </div>
         <div id="sendStatus" class="status neutral"></div>
       </div>
@@ -648,6 +651,7 @@
       contactsSection: document.getElementById("contactsSection"),
 
       sendBtn: document.getElementById("sendBtn"),
+      deleteCampaignBtn: document.getElementById("deleteCampaignBtn"),
       sendStatus: document.getElementById("sendStatus"),
       sendHelp: document.getElementById("sendHelp"),
       reviewSummary: document.getElementById("reviewSummary"),
@@ -848,6 +852,9 @@
       }
       els.campaignMeta.textContent =
         `Contacts: ${state.campaign.contactCount} · Photos: ${state.campaign.responseCount} · Updated: ${fmt(state.campaign.lastUpdated)}`;
+
+      // Show delete button only if no sends have been made
+      els.deleteCampaignBtn.style.display = (state.campaign.sendCount === 0) ? '' : 'none';
 
       if (state.campaign.message && !els.message.value.trim()) {
         els.message.value = state.campaign.message;
@@ -1297,6 +1304,17 @@
     });
     els.devSimulateBtn.onclick = simulateInbound;
     els.devMediaUrl.addEventListener('keydown', e => { if (e.key === 'Enter') simulateInbound(); });
+
+    els.deleteCampaignBtn.onclick = async function() {
+      if (!confirm(`Delete "${state.campaign.name}"? This cannot be undone.`)) return;
+      try {
+        await fetchJSON(`/api/campaigns/${encodeURIComponent(campaignId)}`, { method: "DELETE" });
+        showToast("Campaign deleted.", "success");
+        setTimeout(() => { window.location.href = "dashboard.html"; }, 800);
+      } catch (e) {
+        showToast("Failed to delete: " + e.message, "error");
+      }
+    };
 
     els.closeCampaignBtn.onclick = async function() {
       if (!confirm("Close this campaign? This will prevent any future sends. You'll still be able to receive photos and share the gallery link.")) return;

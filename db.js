@@ -157,6 +157,8 @@ const stmts = {
   insertCampaign: db.prepare("INSERT INTO campaigns (id, name, createdAt, updatedAt, lastUpdated, sendCount, isLocked, lockedAt, message, driveFolderId, shareToken, isClosed, closedAt) VALUES (@id, @name, @createdAt, @updatedAt, @lastUpdated, @sendCount, @isLocked, @lockedAt, @message, @driveFolderId, @shareToken, @isClosed, @closedAt)"),
   updateCampaign: db.prepare("UPDATE campaigns SET name=@name, updatedAt=@updatedAt, lastUpdated=@lastUpdated, sendCount=@sendCount, isLocked=@isLocked, lockedAt=@lockedAt, message=@message, driveFolderId=@driveFolderId, shareToken=@shareToken, isClosed=@isClosed, closedAt=@closedAt WHERE id=@id"),
   getCampaignByShareToken: db.prepare("SELECT * FROM campaigns WHERE shareToken = ?"),
+  deleteCampaign: db.prepare("DELETE FROM campaigns WHERE id = ?"),
+  deleteMembershipsByCampaign: db.prepare("DELETE FROM campaign_contacts WHERE campaignId = ?"),
 
   // Campaign contacts (memberships)
   getMembershipsByCampaign: db.prepare("SELECT * FROM campaign_contacts WHERE campaignId = ?"),

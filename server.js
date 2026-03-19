@@ -683,6 +683,17 @@ app.post("/api/campaigns/:id/close", async (req, res) => {
   res.json({ campaign: { ...campaignToApi(camp), contactCount, responseCount } });
 });
 
+// ---------- Delete campaign ----------
+app.delete("/api/campaigns/:id", requireAuth, (req, res) => {
+  const camp = stmts.getCampaignById.get(req.params.id);
+  if (!camp) return res.status(404).json({ error: "Campaign not found" });
+  if (camp.sendCount > 0) return res.status(400).json({ error: "Cannot delete a campaign that has been sent" });
+
+  stmts.deleteMembershipsByCampaign.run(camp.id);
+  stmts.deleteCampaign.run(camp.id);
+  res.json({ ok: true });
+});
+
 // ---------- Send gallery link ----------
 app.post("/api/campaigns/:id/send-gallery-link", async (req, res) => {
   const camp = stmts.getCampaignById.get(req.params.id);
