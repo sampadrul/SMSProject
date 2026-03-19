@@ -2,27 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Login</title>
+  <title>Log In | PhotoPing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='6' width='24' height='20' rx='4' fill='%231d4ed8'/><circle cx='14' cy='16' r='6' fill='%2360a5fa'/><circle cx='14' cy='16' r='3' fill='%231e40af'/><circle cx='12' cy='14' r='1' fill='%23bfdbfe' opacity='.8'/><rect x='17' y='4' width='6' height='4' rx='1.5' fill='%231d4ed8'/><circle cx='27' cy='7' r='5' fill='%23f43f5e'/><circle cx='27' cy='7' r='2.5' fill='%23fff' opacity='.35'/></svg>" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
     .card { background: #fff; border-radius: 16px; padding: 36px 32px; box-shadow: 0 4px 24px rgba(37,99,235,0.1); border: 1px solid #e0e7ff; width: 100%; max-width: 380px; }
-    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: #1e40af; text-align: center; }
-    p { margin: 0 0 24px; font-size: 13px; color: #64748b; text-align: center; }
-    label { font-size: 11px; font-weight: 600; display: block; margin-bottom: 5px; color: #374151; letter-spacing: 0.04em; text-transform: uppercase; }
+    .logo-mark { text-align: center; margin-bottom: 12px; }
+    .logo-mark svg { width: 48px; height: 48px; }
+    h1 { margin: 0 0 4px; font-size: 26px; font-weight: 800; color: #1d4ed8; text-align: center; letter-spacing: -0.03em; }
+    .tagline { margin: 0 0 28px; font-size: 13px; color: #64748b; text-align: center; line-height: 1.4; }
+    label { font-size: 11px; font-weight: 700; display: block; margin-bottom: 5px; color: #374151; letter-spacing: 0.05em; text-transform: uppercase; }
     input[type="password"] { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1.5px solid #c7d7fe; font-size: 14px; font-family: inherit; background: #f8faff; transition: border-color 0.15s, box-shadow 0.15s; }
     input[type="password"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-    button { width: 100%; margin-top: 16px; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-family: inherit; box-shadow: 0 2px 8px rgba(37,99,235,0.3); transition: all 0.15s; }
-    button:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); box-shadow: 0 4px 16px rgba(37,99,235,0.4); transform: translateY(-1px); }
+    button { width: 100%; margin-top: 16px; padding: 10px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #1d4ed8, #1e3a8a); color: #fff; font-family: inherit; box-shadow: 0 2px 12px rgba(30,58,138,0.35); transition: all 0.15s; }
+    button:hover { background: linear-gradient(135deg, #1e3a8a, #172554); box-shadow: 0 4px 20px rgba(30,58,138,0.45); transform: translateY(-1px); }
     .error { margin-top: 12px; font-size: 13px; color: #dc2626; text-align: center; display: none; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>SMS Campaign Tool</h1>
-    <p>Enter your password to continue</p>
+    <div class="logo-mark">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="6" width="24" height="20" rx="4" fill="#1d4ed8"/><circle cx="14" cy="16" r="6" fill="#60a5fa"/><circle cx="14" cy="16" r="3" fill="#1e40af"/><circle cx="12" cy="14" r="1" fill="#bfdbfe" opacity=".8"/><rect x="17" y="4" width="6" height="4" rx="1.5" fill="#1d4ed8"/><circle cx="27" cy="7" r="5" fill="#f43f5e"/><circle cx="27" cy="7" r="2.5" fill="#fff" opacity=".35"/></svg>
+    </div>
+    <h1>PhotoPing</h1>
+    <p class="tagline">Collect photos from your people, one text at a time.</p>
     <form id="loginForm">
       <label for="password">Password</label>
       <input type="password" id="password" name="password" placeholder="Enter password" autofocus />
