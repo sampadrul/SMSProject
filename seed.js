@@ -315,15 +315,17 @@ async function seed() {
     ...babyShowerPhotoAssignments.map((c) => ({ contact: c, campaign: babyShower })),
   ];
 
+  const slugify = str => (str || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "unknown";
+  const photoCounters = {}; // tracks per-contact-per-campaign count
   let photoCount = 0;
   for (const { contact, campaign } of allAssignments) {
     const safePhone = contact.phoneNumber.replace(/[^\d+]/g, "");
     const phoneDir = path.join(downloadsDir, safePhone);
     if (!fs.existsSync(phoneDir)) fs.mkdirSync(phoneDir, { recursive: true });
 
-    // Filename matches the pattern the inbound webhook uses
-    const timestamp = Date.now() + photoCount; // ensure unique filenames
-    const filename = `${timestamp}.jpg`;
+    const counterKey = `${contact.id}-${campaign.id}`;
+    photoCounters[counterKey] = (photoCounters[counterKey] || 0) + 1;
+    const filename = `${slugify(contact.name)}-${slugify(campaign.name)}-${photoCounters[counterKey]}.jpg`;
     const filePath = path.join(phoneDir, filename);
 
     try {
