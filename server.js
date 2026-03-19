@@ -236,6 +236,18 @@ function extFromContentType(contentType) {
   return "bin";
 }
 
+function buildPhotoFilename({ contactId, campaignId, ext }) {
+  const contact = contactId ? stmts.getContactById.get(contactId) : null;
+  const camp = campaignId ? stmts.getCampaignById.get(campaignId) : null;
+  const slugify = str => (str || "unknown").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "unknown";
+  const senderSlug = slugify(contact?.name);
+  const campaignSlug = slugify(camp?.name);
+  const existingCount = (contactId && campaignId)
+    ? (stmts.countPhotosByCampaignAndContact.get(campaignId, contactId)?.count || 0)
+    : 0;
+  return `${senderSlug}-${campaignSlug}-${existingCount + 1}.${ext}`;
+}
+
 async function computeImageHash(buffer) {
   return crypto.createHash("sha1").update(buffer).digest("hex");
 }
@@ -910,8 +922,9 @@ app.post("/api/photos/:id/retry-upload", requireAuth, async (req, res) => {
     const mimeMap = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp" };
     const mimeType = mimeMap[ext] || "application/octet-stream";
 
+    const driveFilename = buildPhotoFilename({ contactId: photo.contactId, campaignId: photo.campaignId, ext: path.extname(photo.filename).slice(1) || "jpg" });
     const uploadResult = await uploadBufferToDrive({
-      buffer, filename: photo.filename, mimeType, folderId: driveFolderId
+      buffer, filename: driveFilename, mimeType, folderId: driveFolderId
     });
 
     stmts.updatePhotoDriveInfo.run(uploadResult.id, uploadResult.webViewLink || null, photo.id);
@@ -1077,7 +1090,7 @@ app.post("/twilio/inbound",
       const fromFolder = path.join(DOWNLOADS_DIR, safeFrom || "unknown");
       ensureDir(fromFolder);
 
-      const filename = `${Date.now()}.${ext}`;
+      const filename = buildPhotoFilename({ contactId, campaignId, ext });
       const filePath = path.join(fromFolder, filename);
 
       const response = await axios.get(mediaUrl, {

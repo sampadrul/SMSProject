@@ -182,6 +182,7 @@ const stmts = {
   getPhotosWithoutDrive: db.prepare("SELECT * FROM photos WHERE driveFileId IS NULL ORDER BY createdAt DESC"),
   getPhotoById: db.prepare("SELECT * FROM photos WHERE id = ?"),
   countPhotosByCampaign: db.prepare("SELECT COUNT(*) as count FROM photos WHERE campaignId = ?"),
+  countPhotosByCampaignAndContact: db.prepare("SELECT COUNT(*) as count FROM photos WHERE campaignId = ? AND contactId = ?"),
 
   // Send log
   getSendLogByCampaign: db.prepare("SELECT * FROM send_log WHERE campaignId = ? ORDER BY sentAt DESC"),
