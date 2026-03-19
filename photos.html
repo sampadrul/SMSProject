@@ -9,7 +9,8 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: 'Inter', system-ui, -apple-system, sans-serif; margin: 0; background: #f0f4ff; color: #0f172a; letter-spacing: -0.01em; }
-    header { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%); color: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 16px rgba(30,58,138,0.3); }
+    header { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%); color: #fff; box-shadow: 0 2px 16px rgba(30,58,138,0.3); }
+    .header-inner { max-width: 1200px; margin: 0 auto; padding: 12px 24px; width: 100%; display: flex; align-items: center; justify-content: space-between; }
     .header-left { display: flex; align-items: center; gap: 12px; }
     .brand-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: #fff; }
     .brand-link svg { width: 24px; height: 24px; flex-shrink: 0; }
@@ -21,7 +22,7 @@
     header .nav-links a.active { background: rgba(255,255,255,0.25); color: #fff; border-color: rgba(255,255,255,0.4); }
     header h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
     header .small { color: #bfdbfe; }
-    main { max-width: 1100px; margin: 24px auto 48px; padding: 0 20px; }
+    main { max-width: 1200px; margin: 24px auto 48px; padding: 0 20px; }
     h2 { margin: 0 0 6px; font-size: 17px; font-weight: 800; color: #0f172a; letter-spacing: -0.025em; }
     p.subtle { margin: 0 0 16px; font-size: 13px; color: #64748b; line-height: 1.5; }
     .badge { display: inline-flex; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; background: #dbeafe; color: #1d4ed8; border: none; }
@@ -39,7 +40,7 @@
     .link:hover { text-decoration: underline; }
     .reuse { margin-top: 4px; padding: 2px 6px; border-radius: 6px; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; display: inline-block; font-size: 11px; }
     @media (max-width: 600px) {
-      header { flex-wrap: wrap; padding: 12px 16px; gap: 8px; }
+      .header-inner { flex-wrap: wrap; padding: 12px 16px; gap: 8px; }
       .brand-name { display: none; }
       .header-divider { display: none; }
       header .left { gap: 10px; }
@@ -88,6 +89,7 @@
 </head>
 <body>
   <header>
+    <div class="header-inner">
     <div class="header-left">
       <a href="dashboard.html" class="brand-link">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="6" width="24" height="20" rx="4" fill="#fff"/><circle cx="14" cy="16" r="6" fill="#60a5fa"/><circle cx="14" cy="16" r="3" fill="#1e40af"/><circle cx="12" cy="14" r="1" fill="#bfdbfe" opacity=".8"/><rect x="17" y="4" width="6" height="4" rx="1.5" fill="#fff"/><circle cx="27" cy="7" r="5" fill="#f43f5e"/><circle cx="27" cy="7" r="2.5" fill="#fff" opacity=".35"/></svg>
@@ -95,7 +97,6 @@
       </a>
       <div class="header-divider"></div>
       <div>
-        <div class="small">Gallery</div>
         <h1>All Photos</h1>
       </div>
     </div>
@@ -103,6 +104,7 @@
       <a href="dashboard.html">Campaigns</a>
       <a href="contacts.html">Contacts</a>
       <a href="photos.html" class="active">Photos</a>
+    </div>
     </div>
   </header>
 
