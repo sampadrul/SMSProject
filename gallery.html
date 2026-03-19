@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Photo Gallery</title>
+  <title>Gallery | PhotoPing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='2' y='6' width='24' height='20' rx='4' fill='%231d4ed8'/><circle cx='14' cy='16' r='6' fill='%2360a5fa'/><circle cx='14' cy='16' r='3' fill='%231e40af'/><circle cx='12' cy='14' r='1' fill='%23bfdbfe' opacity='.8'/><rect x='17' y='4' width='6' height='4' rx='1.5' fill='%231d4ed8'/><circle cx='27' cy='7' r='5' fill='%23f43f5e'/><circle cx='27' cy='7' r='2.5' fill='%23fff' opacity='.35'/></svg>" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     *, *::before, *::after { box-sizing: border-box; }
@@ -11,10 +12,13 @@
 
     /* ── Header ─────────────────────────────── */
     header {
+      position: relative;
       background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
       color: #fff; padding: 36px 28px 32px; text-align: center;
       box-shadow: 0 4px 24px rgba(37,99,235,0.3);
     }
+    .gallery-brand { position: absolute; top: 12px; left: 16px; opacity: 0.6; }
+    .gallery-brand svg { width: 20px; height: 20px; }
     header h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
     .photo-pill {
       display: inline-block; margin-top: 10px; padding: 4px 14px;
@@ -135,6 +139,9 @@
 </head>
 <body>
   <header>
+    <div class="gallery-brand">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect x="2" y="6" width="24" height="20" rx="4" fill="#fff"/><circle cx="14" cy="16" r="6" fill="#60a5fa"/><circle cx="14" cy="16" r="3" fill="#1e40af"/><circle cx="12" cy="14" r="1" fill="#bfdbfe" opacity=".8"/><rect x="17" y="4" width="6" height="4" rx="1.5" fill="#fff"/><circle cx="27" cy="7" r="5" fill="#f43f5e"/><circle cx="27" cy="7" r="2.5" fill="#fff" opacity=".35"/></svg>
+    </div>
     <h1 id="galleryName"><span class="skeleton skeleton-bar" style="display:inline-block;">&nbsp;</span></h1>
     <div id="headerPill"><div class="skeleton skeleton-pill">&nbsp;</div></div>
   </header>
@@ -243,7 +250,7 @@
         }
 
         const data = await res.json();
-        document.title = `${data.name} — Photo Gallery`;
+        document.title = `${data.name} | PhotoPing`;
         document.getElementById('galleryName').textContent = data.name;
 
         if (!data.photos || data.photos.length === 0) {
