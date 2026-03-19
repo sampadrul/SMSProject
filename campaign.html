@@ -58,7 +58,10 @@
     .photo-card { background: #f8faff; border: 1.5px solid #e0e7ff; border-radius: 10px; overflow: hidden; transition: box-shadow 0.15s, transform 0.15s; }
     .photo-card:hover { box-shadow: 0 4px 16px rgba(37,99,235,0.15); transform: translateY(-2px); }
     .photo-card img { width: 100%; height: 140px; object-fit: cover; display: block; }
-    .photo-meta { padding: 4px 6px 6px; font-size: 11px; }
+    .photo-meta { padding: 6px 8px 7px; font-size: 11px; display: flex; flex-direction: column; gap: 4px; }
+    .photo-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+    .photo-date { font-size: 10px; color: #94a3b8; }
+    .reuse-badge { padding: 1px 6px; border-radius: 5px; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; font-size: 10px; font-weight: 600; white-space: nowrap; }
     .small-text { font-size: 11px; color: #64748b; }
     .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; border: 1.5px solid #bfdbfe; background: #eff6ff; color: #2563eb; }
     hr { border: none; border-top: 1px solid #e0e7ff; margin: 20px 0; }
@@ -1144,37 +1147,34 @@
           const meta = document.createElement("div");
           meta.className = "photo-meta";
 
-          const fn = document.createElement("div");
-          fn.textContent = p.filename;
-          meta.appendChild(fn);
-
-          const dt = document.createElement("div");
-          dt.className = "small-text";
-          dt.textContent = fmt(p.createdAt);
-          meta.appendChild(dt);
-
+          // Row 1: date + drive link
+          const row1 = document.createElement("div");
+          row1.className = "photo-meta-row";
+          const dateEl = document.createElement("span");
+          dateEl.className = "photo-date";
+          dateEl.textContent = fmt(p.createdAt);
+          row1.appendChild(dateEl);
           if (p.driveWebViewLink) {
             const driveLink = document.createElement("a");
             driveLink.className = "drive-link";
             driveLink.href = p.driveWebViewLink;
             driveLink.target = "_blank";
             driveLink.rel = "noopener";
-            driveLink.textContent = "View in Drive \u2197";
+            driveLink.textContent = "↗ Drive";
             driveLink.onclick = function(e) { e.stopPropagation(); };
-            meta.appendChild(driveLink);
+            row1.appendChild(driveLink);
           }
+          meta.appendChild(row1);
 
+          // Row 2: reuse badge (if applicable)
           if (p.similarInOtherCampaigns && p.similarInOtherCampaigns.length > 0) {
-            const badge = document.createElement("div");
-            badge.className = "small-text";
-            badge.style.marginTop = "4px";
-            badge.style.padding = "2px 6px";
-            badge.style.border = "1px solid #f59e0b";
-            badge.style.borderRadius = "999px";
-            badge.style.display = "inline-block";
-            badge.style.background = "#fffbeb";
-            badge.textContent = `⚠ Also used in ${p.similarInOtherCampaigns.length} other campaign(s)`;
-            meta.appendChild(badge);
+            const row2 = document.createElement("div");
+            row2.className = "photo-meta-row";
+            const badge = document.createElement("span");
+            badge.className = "reuse-badge";
+            badge.textContent = `+${p.similarInOtherCampaigns.length} other campaign${p.similarInOtherCampaigns.length > 1 ? 's' : ''}`;
+            row2.appendChild(badge);
+            meta.appendChild(row2);
           }
 
           card.appendChild(meta);
