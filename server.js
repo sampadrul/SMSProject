@@ -1081,9 +1081,9 @@ app.post("/twilio/inbound",
       }
     }
 
-    if (numMedia > 0) {
-      const mediaUrl = req.body.MediaUrl0;
-      const contentType = req.body.MediaContentType0 || "image/jpeg";
+    for (let i = 0; i < numMedia; i++) {
+      const mediaUrl = req.body[`MediaUrl${i}`];
+      const contentType = req.body[`MediaContentType${i}`] || "image/jpeg";
       const ext = extFromContentType(contentType);
 
       const safeFrom = (from || "unknown").replace(/[^\d+]/g, "");
@@ -1193,8 +1193,6 @@ app.post("/twilio/inbound",
           stmts.updateCampaign.run({ ...camp, updatedAt: now, lastUpdated: now });
         }
       }
-    } else {
-      console.log("No media in this message.");
     }
 
     res.status(200).send("<Response></Response>");
